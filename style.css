@@ -1,0 +1,15 @@
+table, th, td {
+   border: 1px solid black;
+}
+td {
+  width: 20px;
+  height: 20px;
+  text-align: center;
+}
+.black {
+  background-color: black;
+}
+
+tbody {
+  font-family: monospace;
+}
