@@ -17,6 +17,8 @@
 	</table>
 	<div id="position">
 	</div>
+	<input id="userpath" name="userpath" type="text" value="^^^^">
+	<button id="trace">Trace</button>
 	<button id="solve">Solve</button>
 	<br><br>
 
@@ -40,9 +42,9 @@
 			"###############",
 			"#             #",
 			"# #### # ###  #",
-			"# #### # ###  #",
-			"# ###### ###  #",
-			"#S        ##  #",
+			"# #### #      #",
+			"# ######  #   #",
+			"#S       ###  #",
 			"# ########### #",
 			"# ###      ## #",
 			"#     ####  #F#",
@@ -76,8 +78,9 @@
 				return str.substr(0, index) + character + str.substr(index + character.length);
 			}
 			// chromosomal drift
+			var charset = "^v<>";
 			var i = Math.floor(Math.random() * entity.length)
-			return replaceAt(entity, i, String.fromCharCode(entity.charCodeAt(i) + (Math.floor(Math.random() * 2) ? 1 : -1)));
+			return replaceAt(entity, i, charset.charAt(Math.floor(Math.random() * charset.length)));
 		};
 
 
@@ -108,7 +111,6 @@
 			// Close to the exit
 			fitness = 100 - Math.sqrt((exitX -= last[0]) * exitX + (exitY -= last[1]) * exitY);
 			// Shortest path
-			fitness -= path.length;
 			return fitness;
 		};
 
@@ -118,28 +120,32 @@
 			var level = this.userData.level;
 			var x = this.userData["startX"];
 			var y = this.userData["startY"];
-			var path = [[x, y]];
+			var path = [
+				[x, y]
+			];
 
 			for (var i = 0; i < entity.length - 1; i++) {
 				switch (entity[i]) {
-					default:
-						break;
 					case '^':
 						if (level[y - 1][x] != "#") {
-							y -= 1;
+							y--;
 						}
+						break;
 					case 'v':
 						if (level[y + 1][x] != "#") {
-							y += 1;
+							y++;
 						}
+						break;
 					case '<':
 						if (level[y][x - 1] != "#") {
-							x -= 1;
+							x--;
 						}
+						break;
 					case '>':
 						if (level[y][x + 1] != "#") {
-							x += 1;
+							x++;
 						}
+						break;
 				}
 				path.push([x, y]);
 			}
@@ -211,18 +217,20 @@
 				var cell = $('#grid tbody')[0].rows[path[i][1]].cells[path[i][0]];
 				var $cell = $(cell);
 				$cell.css('background-color', 'green').css('transition', '1s');
-				$cell.html(value[i-1]);
+				$cell.html(value[i]);
 			}
 
 			// TABLE OUTPUT PROGRESS
 			var solution = [];
-			for (var i = 0; i < path.length - 1; i++){
+			for (var i = 0; i < path.length - 1; i++) {
 				var style = "background: transparent;";
-				if (path[i][0] == path[i+1][0] && path[i][1] == path[i+1][1]){ // static
-					var style = "background: rgb(0,200,50); color: #fff;";
+				if (path[i][0] == path[i + 1][0] && path[i][1] == path[i + 1][1]) {
+					var style = "background: rgb(200,0,50); color: #fff;";
 				}
-				solution.push("<span style=\"" + style + "\">" + value[i + 1] + "</span>");
+				solution.push("<span style=\"" + style + "\">" + value[i] + "</span>");
 			}
+
+			// CREATE ROW
 			var buf = "";
 			buf += "<tr>";
 			buf += "<td>" + generation + "</td>";
@@ -262,6 +270,48 @@
 				$('#position').html("X: " + col + ", " + "Y: " + row);
 			});
 
+			// LEVEL NON LOAD
+			$("#trace").click(function() {
+				var userPath = $('#userpath').val();
+				var x = startX;
+				var y = startY;
+				for (var i = 0; i < userPath.length; i++) {
+					switch (userPath[i]) {
+						default:
+							console.log("Wrong input...");
+							break;
+						case '^':
+							if (level[y - 1][x] != "#") {
+								y--;
+								console.log("Moving up to [" + x + ", " + y + "]");
+							}
+							break;
+						case 'v':
+							if (level[y + 1][x] != "#") {
+								y++;
+								console.log("Moving down to [" + x + ", " + y + "]");
+							}
+							break;
+						case '<':
+							if (level[y][x - 1] != "#") {
+								x--;
+								console.log("Moving left to [" + x + ", " + y + "]");
+							}
+							break;
+						case '>':
+							if (level[y][x + 1] != "#") {
+								x++;
+								console.log("Moving right to [" + x + ", " + y + "]");
+							}
+							break;
+					}
+					var cell = $('#grid tbody')[0].rows[y].cells[x];
+					var $cell = $(cell);
+					$cell.css('background-color', 'green').css('transition', '1s');
+					$cell.html(userPath[i]);
+				}
+			});
+
 			$("#solve").click(function() {
 
 				$("#results tbody").html("");
@@ -271,6 +321,7 @@
 					"size": 250,
 					"crossover": 0.3,
 					"mutation": 0.3,
+					"fittestAlwaysSurvives": false,
 					"skip": 20
 				};
 
