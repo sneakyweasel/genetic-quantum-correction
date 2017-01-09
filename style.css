@@ -1,15 +1,38 @@
-table, th, td {
+th, td {
    border: 1px solid black;
 }
 td {
-  width: 20px;
-  height: 20px;
+  width: 25px;
+  height: 25px;
   text-align: center;
-}
-.black {
-  background-color: black;
 }
 
 tbody {
   font-family: monospace;
+}
+
+button {
+  border-radius: 1px;
+}
+
+#grid {
+  padding-bottom: 20px;
+}
+
+#userpath {
+  font-size: 14px;
+  width: 400px;
+}
+
+.wall {
+  background-color: black;
+}
+.start {
+  background-color: green;
+}
+.finish {
+  background-color: red;
+}
+.path {
+  background-color: green;
 }
