@@ -12,15 +12,18 @@
 <body>
 
 	<h1>Genetic Maze Solver</h1>
-	<table id="grid">
-		<tbody></tbody>
-	</table>
-	<div id="position">
+
+	<div id="maze">
+		<table id="grid">
+			<tbody></tbody>
+		</table>
 	</div>
-	<input id="userpath" name="userpath" type="text" value="">
-	<button id="trace">Trace</button>
-	<button id="solve">Solve</button>
-	<br><br>
+
+	<div id="controls">
+		<input id="userpath" name="userpath" type="text" value="">
+		<button id="trace">Trace</button>
+		<button id="solve">Solve</button>
+	</div>
 
 	<table id="results">
 		<thead>
@@ -247,12 +250,15 @@
 
 			// Output progress table
 			var solution = [];
+			var pathSize = 0;
 			for (var i = 0; i < path.length - 1; i++) {
 				var style = "background: transparent;";
 				if (path[i][0] == path[i + 1][0] && path[i][1] == path[i + 1][1]) {
 					var style = "background: rgb(200,0,50); color: #fff;";
+					solution.push("<span style=\"" + style + "\">" + value[i] + "</span>");
 				} else {
 					solution.push("<span style=\"" + style + "\">" + value[i] + "</span>");
+					pathSize++;
 				}
 			}
 
@@ -261,10 +267,10 @@
 			buf += "<tr>";
 			buf += "<td>" + generation + "</td>";
 			buf += "<td>" + pop[0].fitness.toPrecision(5) + "</td>";
-			buf += "<td>" + solution.join("") + "</td>";
+			buf += "<td class='solution'>" + solution.join("") + "</td>";
 			buf += "<td>" + last[0] + "</td>";
 			buf += "<td>" + last[1] + "</td>";
-			buf += "<td>" + solution.length + "</td>";
+			buf += "<td>" + pathSize + "</td>";
 			buf += "</tr>";
 			$("#results tbody").prepend(buf);
 
@@ -319,6 +325,7 @@
 				String.prototype.replaceAt = function(index, character) {
 					return this.substr(0, index) + character + this.substr(index + character.length);
 				}
+				genetic.resetMap();
 				var x = parseInt($(this).index());
 				var y = parseInt($(this).parent().index());
 				var cell = $('#grid tbody')[0].rows[y].cells[x];
@@ -345,25 +352,21 @@
 						case '^':
 								if (level[y - 1][x] != "#") {
 								y--;
-								console.log("Moving up to [" + x + ", " + y + "]");
 							}
 							break;
 						case 'v':
 								if (level[y + 1][x] != "#") {
 								y++;
-								console.log("Moving down to [" + x + ", " + y + "]");
 							}
 							break;
 						case '<':
 								if (level[y][x - 1] != "#") {
 								x--;
-								console.log("Moving left to [" + x + ", " + y + "]");
 							}
 							break;
 						case '>':
 								if (level[y][x + 1] != "#") {
 								x++;
-								console.log("Moving right to [" + x + ", " + y + "]");
 							}
 							break;
 					}
@@ -374,6 +377,15 @@
 				}
 			});
 
+			// Replay sequence
+			$('body').on('click', '#results tbody tr', function(event) {
+    		var path = $(this).closest('tr').find("td:eq(2)").text();
+				console.log('Replay: ' + path);
+				$('#userpath').val(path);
+				$('#trace').trigger('click');
+			});
+
+			// Launch trace
 			$("#solve").click(function() {
 
 				$("#results tbody").html("");
