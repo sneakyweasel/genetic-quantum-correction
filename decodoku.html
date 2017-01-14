@@ -2,22 +2,32 @@
 <html lang="en">
 
 <head>
-	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-	<title>Magnetic Quantum Error Correction</title>
-	<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-  <script src="decodoku.js"></script>
-	<link rel="stylesheet" type="text/css" href="decodoku.css">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>Quantum Error Correction</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="decodoku.js"></script>
+    <link rel="stylesheet" type="text/css" href="decodoku.css">
 </head>
 
 <body>
 
-	<h1>Magnetic Quantum Error Correction</h1>
+    <h1>Magnetic Quantum Error Correction</h1>
 
-	<div>
-		<table id="grid">
-			<tbody></tbody>
-		</table>
-	</div>
+    <div>
+        <table id="grid">
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div id="controls">
+        <p id="secs"></p>
+        <p id="score">SCORE</p>
+        <p id="highscore"></p>
+        <input type="radio" name="gametype" value="Phi"> Phi
+        <input type="radio" name="gametype" value="Number" checked> Number
+        <br><br>
+        <button id="newgame" type="button" name="button">New game</button>
+    </div>
 
 </body>
 
