@@ -20,7 +20,37 @@ td, th {
   margin-right: auto; }
   #grid td {
     border: 1px solid white; }
+  #grid .group0 {
+    background-color: maroon; }
+  #grid .group1 {
+    background-color: red; }
+  #grid .group2 {
+    background-color: orange; }
+  #grid .group3 {
+    background-color: yellow; }
+  #grid .group4 {
+    background-color: olive; }
+  #grid .group5 {
+    background-color: green; }
+  #grid .group6 {
+    background-color: purple; }
+  #grid .group7 {
+    background-color: magenta; }
+  #grid .group8 {
+    background-color: lime; }
+  #grid .group9 {
+    background-color: teal; }
+  #grid .group10 {
+    background-color: cyan; }
+  #grid .group11 {
+    background-color: blue; }
+  #grid .group12 {
+    background-color: navy; }
 
 /* CONTROLS */
 #controls {
   text-align: center; }
+
+/* CLUSTERS */
+#clusters td {
+  text-align: left; }

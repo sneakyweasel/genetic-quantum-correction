@@ -11,11 +11,19 @@
 
 <body>
 
-    <h1>Magnetic Quantum Error Correction</h1>
+    <h1>Quantum Error Correction</h1>
 
     <div>
         <table id="grid">
-            <tbody></tbody>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+    <div>
+        <table id="clusterGrid">
+            <tbody>
+            </tbody>
         </table>
     </div>
 
@@ -25,8 +33,23 @@
         <p id="highscore"></p>
         <input type="radio" name="gametype" value="Phi"> Phi
         <input type="radio" name="gametype" value="Number" checked> Number
+        <input type="radio" name="gametype" value="Cluster"> Cluster
         <br><br>
         <button id="newgame" type="button" name="button">New game</button>
+    </div>
+
+    <div>
+        <table id="clusters">
+            <thead>
+                <tr>
+                    <th>id</th>
+                    <th>size</th>
+                    <th>threat</th>
+                    <th>cluster</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
 
 </body>
