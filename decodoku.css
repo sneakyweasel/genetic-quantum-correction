@@ -44,6 +44,8 @@ td, th {
     background-color: cyan; }
   #grid .group11 {
     background-color: blue; }
+  #grid .selected {
+    font-size: 16px; }
 
 /* CONTROLS */
 #controls {

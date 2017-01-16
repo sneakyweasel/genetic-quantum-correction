@@ -1,13 +1,16 @@
 //------------------------------------------------------------------------------
 // QUANTUM ERROR CORRECTION CODE
 //------------------------------------------------------------------------------
-// TODO: Prune null cluster to free css color classes
-// TODO: Work on the historical secs system
+// INPUT: A 8*8 grid of values or game over
+// OUTPUT: A list of 10 numbers describing grid movements
+
+// Game mechanics
+// TODO: Implement game over high score save
 // TODO: Create a historical 3D view of the propagation and merging of clusters
-// TODO: See a reverse view from spanners as a branching 3D view
+// Display
 // TODO: Persist gametype display
 // TODO: Display first selected cell with bold
-// TODO: Toggle console debug
+// TODO: Prune null cluster to free css color classes
 
 // GLOBAL VARIABLES
 var gridSize = 8;
@@ -17,6 +20,8 @@ var clusterNum = 0;
 var num = 0;
 var type = "Number";
 var score = 0;
+var errorRate = 5;
+var gameover = false;
 
 // INITIALIZE CLUSTERS & ANYONS ARRAY
 var anyons = [];
@@ -114,6 +119,19 @@ function generateError() {
 }
 
 
+// GENERATE NOISE
+function generateNoise() {
+    var num = 0;
+    errorList = [];
+    while (num < 6) {
+        var error = generateError();
+        errorList.push(error[0], error[1], error[2], error[3]);
+        num += error[4];
+    }
+    return errorList;
+}
+
+
 // CHECK SPANNERS
 function checkSpanners() {
     var spanners = 0;
@@ -127,12 +145,40 @@ function checkSpanners() {
 }
 
 
+// COUNT ANYONS
+function countAnyons() {
+    var count = 0;
+    for (var x = 0; x < gridSize; x++) {
+        for (var y = 0; y < gridSize; y++) {
+            if (anyons[secs % 50][x][y] != 0) {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+
+// COUNT MOVES
+function countMoves() {
+    secs++;
+    for (var x = 0; x < gridSize; x++) {
+        for (var y = 0; y < gridSize; y++) {
+            anyons[secs % 50][x][y] = anyons[(secs - 1) % 50][x][y];
+        }
+    }
+    return secs;
+}
+
+
 // MOVES
 function move(x1, y1, x2, y2) {
-    console.log("Move from ["+x1+", "+y1+"]["+clusters[x1][y1]+"] to ["+x2+", "+y2+"]["+clusters[x2][y2]+"]");
+    countMoves();
+    console.log("Move from [" + x1 + ", " + y1 + "][" + clusters[x1][y1] + "] to [" + x2 + ", " + y2 + "][" + clusters[x2][y2] + "]");
     var newVal = (anyons[secs % 50][x1][y1] + anyons[secs % 50][x2][y2]) % d;
     anyons[secs % 50][x1][y1] = 0;
     anyons[secs % 50][x2][y2] = newVal;
+
     // link clusters or move to empty cell
     if (clusters[x2][y2] != undefined) {
         var oldCluster = clusters[x1][y1];
@@ -147,7 +193,40 @@ function move(x1, y1, x2, y2) {
         clusters[x2][y2] = clusters[x1][y1];
         clusters[x1][y1] = undefined;
     }
+
+    // check for spanners
+    if (checkSpanners()) {
+        gameOver = true;
+
+    } else {
+        // empty anyons array
+        if (countAnyons() == 0) {
+            while ((secs % errorRate) > 0) {
+                countMoves();
+            }
+        }
+        // generate noise
+        if (secs % errorRate == 0) {
+            generateNoise();
+        }
+    }
     return newVal;
+}
+
+
+// NEW GAME
+function newGame() {
+    var x1, y1, x2, y2;
+    secs = 0;
+    clusterNum = 0;
+    score = 0;
+    resetAnyons();
+    resetGrid();
+    generateNoise();
+    if (checkSpanners()) {
+        newGame();
+    }
+    displayGrid();
 }
 
 
@@ -186,7 +265,6 @@ function displayGrid() {
                 switch (type) {
                     case "Number":
                         updateCell(x, y, anyons[secs % 50][x][y]);
-
                         break;
                     case "Phi":
                         if (anyons[secs % 50][x][y] == 5) {
@@ -219,6 +297,7 @@ function updateCell(x, y, val) {
     }
 }
 
+
 //------------------------CONTROLS----------------------------------------------
 // DISPLAY CLUSTERS
 function displayClusters() {
@@ -230,7 +309,7 @@ function displayClusters() {
         clusterList[clust] = [];
         for (var y = 0; y < gridSize; y++) {
             for (var x = 0; x < gridSize; x++) {
-                if (clusters[x][y] == clust) {
+                if (clusters[x][y] == clust && clusters[x][y] != 0) {
                     clusterList[clust].push([x, y]);
                 }
             }
@@ -271,31 +350,6 @@ function threatLevel(cluster) {
 }
 
 
-// NEW GAME
-function newGame() {
-    var x1, y1, x2, y2;
-    secs = 0;
-    clusterNum = 0;
-    score = 0;
-    resetAnyons();
-    resetGrid();
-    var num = 0;
-    while (num < 6) {
-        var error = generateError();
-        x1 = error[0];
-        y1 = error[1];
-        x2 = error[2];
-        y2 = error[3];
-        updateCell(x1, y1, anyons[secs % 50][x1][y1]);
-        updateCell(x2, y2, anyons[secs % 50][x2][y2]);
-        num += error[4];
-        displayClusters();
-    }
-    if (checkSpanners()) {
-        newGame();
-    }
-}
-
 //------------------------MAIN--------------------------------------------------
 $(document).ready(function() {
     initGrid();
@@ -324,6 +378,7 @@ $(document).ready(function() {
             updateCell(x, y, newVal);
             displayClusters();
             dragging = false;
+
         } else {
             console.log("Movement error...");
             dragging = false;
@@ -338,6 +393,7 @@ $(document).ready(function() {
     $("#error").click(function() {
         generateError();
         displayGrid();
+        displayClusters();
     });
     $("input[name='gametype']").change(function() {
         type = $(this).val();
