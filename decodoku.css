@@ -27,7 +27,7 @@ td, th {
   #grid .group2 {
     background-color: orange; }
   #grid .group3 {
-    background-color: yellow; }
+    background-color: navy; }
   #grid .group4 {
     background-color: olive; }
   #grid .group5 {
@@ -44,8 +44,6 @@ td, th {
     background-color: cyan; }
   #grid .group11 {
     background-color: blue; }
-  #grid .group12 {
-    background-color: navy; }
 
 /* CONTROLS */
 #controls {

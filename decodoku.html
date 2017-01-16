@@ -5,6 +5,7 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <title>Quantum Error Correction</title>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <script src="decodoku.js"></script>
     <link rel="stylesheet" type="text/css" href="decodoku.css">
 </head>
@@ -28,14 +29,23 @@
     </div>
 
     <div id="controls">
-        <p id="secs"></p>
-        <p id="score">SCORE</p>
-        <p id="highscore"></p>
-        <input type="radio" name="gametype" value="Phi"> Phi
-        <input type="radio" name="gametype" value="Number" checked> Number
-        <input type="radio" name="gametype" value="Cluster"> Cluster
-        <br><br>
-        <button id="newgame" type="button" name="button">New game</button>
+        <p>
+            SECS LEFT:
+            <span id="secs"></span>
+        </p>
+        <p>
+            SCORE:
+            <span id="score"></span>
+        </p>
+        <p>
+            <input type="radio" name="gametype" value="Phi"> Phi
+            <input type="radio" name="gametype" value="Number" checked> Number
+            <input type="radio" name="gametype" value="Cluster"> Cluster
+        </p>
+        <p>
+            <button id="error" type="button" name="prev">Add error</button>
+            <button id="newgame" type="button" name="newgame">New game</button>
+        </p>
     </div>
 
     <div>
