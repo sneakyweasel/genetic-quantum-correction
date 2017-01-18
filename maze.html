@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<title>Genetic.js Maze Solver</title>
+	<script src="genetic.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+
+	<h1>Genetic Maze Solver</h1>
+
+	<div id="maze">
+		<table id="grid">
+			<tbody></tbody>
+		</table>
+	</div>
+
+	<div id="controls">
+		<input id="userpath" name="userpath" type="text" value="">
+		<button id="trace">Trace</button>
+		<button id="solve">Solve</button>
+	</div>
+
+	<table id="results">
+		<thead>
+			<tr>
+				<th>Generation</th>
+				<th>Fitness</th>
+				<th>Solution</th>
+				<th>X</th>
+				<th>Y</th>
+				<th>Size</th>
+			</tr>
+		</thead>
+		<tbody>
+		</tbody>
+	</table>
+
+	<script>
+		var level = [
+			"###############",
+			"#S            #",
+			"#  ### # ###  #",
+			"# #### #  #   #",
+			"# ######  #   #",
+			"#        ###  #",
+			"# ########### #",
+			"# ###      ## #",
+			"#     ####  #F#",
+			"###############"
+		];
+
+		var genetic = Genetic.create();
+
+		genetic.optimize = Genetic.Optimize.Maximize;
+		genetic.select1 = Genetic.Select1.Tournament2;
+		genetic.select2 = Genetic.Select2.Tournament2;
+
+
+		// DRAW MAZE
+		genetic.drawMap = function() {
+			for (var y = 0; y < level.length; y++) {
+				row = $('<tr></tr>');
+				for (var x = 0; x < level[0].length; x++) {
+					//var rowData = $('<td>' + level[y][x] + '</td>');
+					var rowData = $('<td></td>');
+					if (level[y][x] == "#") {
+						rowData.addClass('wall');
+					} else if (level[y][x] == "S") {
+						rowData.addClass('start');
+					} else if (level[y][x] == "F") {
+						rowData.addClass('finish');
+					}
+					row.append(rowData);
+				}
+				$('#grid tbody').append(row);
+			}
+		}
+
+
+		// RESET MAZE
+		genetic.resetMap = function() {
+			for (var y = 0; y < level.length; y++) {
+				for (var x = 0; x < level[0].length; x++) {
+					var cell = $('#grid tbody')[0].rows[y].cells[x];
+					var $cell = $(cell);
+					$cell.html("");
+					$cell.removeClass();
+					if (level[y][x] == "#") {
+						$cell.addClass('wall');
+					} else if (level[y][x] == "S") {
+						$cell.addClass('start');
+					} else if (level[y][x] == "F") {
+						$cell.addClass('finish');
+					}
+				}
+			}
+		}
+
+
+		// CREATE SEEDS
+		genetic.seed = function() {
+			function randomString(len) {
+				var text = "";
+				var charset = "^v<>";
+				for (var i = 0; i < len; i++)
+					text += charset.charAt(Math.floor(Math.random() * charset.length));
+				return text;
+			}
+			// create random strings that are equal in length to solution
+			return randomString(this.userData["level"].length * 3);
+		};
+
+
+		// MUTATIONS
+		genetic.mutate = function(entity) {
+			function replaceAt(str, index, character) {
+				return str.substr(0, index) + character + str.substr(index + character.length);
+			}
+			// chromosomal drift
+			var charset = "^v<>";
+			var i = Math.floor(Math.random() * entity.length)
+			return replaceAt(entity, i, charset.charAt(Math.floor(Math.random() * charset.length)));
+		};
+
+
+		// CROSSOVER
+		genetic.crossover = function(mother, father) {
+			// two-point crossover
+			var len = mother.length;
+			var ca = Math.floor(Math.random() * len);
+			var cb = Math.floor(Math.random() * len);
+			if (ca > cb) {
+				var tmp = cb;
+				cb = ca;
+				ca = tmp;
+			}
+			var son = father.substr(0, ca) + mother.substr(ca, cb - ca) + father.substr(cb);
+			var daughter = mother.substr(0, ca) + father.substr(ca, cb - ca) + mother.substr(cb);
+			return [son, daughter];
+		};
+
+
+		// FITNESS
+		genetic.fitness = function(entity) {
+			var fitness = 0;
+			var exitX = this.userData["exitX"];
+			var exitY = this.userData["exitY"];
+			var path = this.process_entity(entity);
+			var last = path[path.length - 1];
+
+			// Close to the exit
+			fitness = 100 - Math.sqrt((exitX -= last[0]) * exitX + (exitY -= last[1]) * exitY);
+
+			// Penalty for wall bumping
+			for (var i = 0; i < path.length - 1; i++) {
+				if (path[i][0] == path[i + 1][0] && path[i][1] == path[i + 1][1]) {
+					fitness--;
+				}
+			}
+			return fitness;
+		};
+
+
+		// GENERATE PATH FROM ENTITY
+		genetic.process_entity = function(entity) {
+			var level = this.userData.level;
+			var x = this.userData["startX"];
+			var y = this.userData["startY"];
+			var path = [
+				[x, y]
+			];
+
+			for (var i = 0; i < entity.length - 1; i++) {
+				switch (entity[i]) {
+					case '^':
+						if (level[y - 1][x] != "#") {
+							y--;
+						}
+						break;
+					case 'v':
+						if (level[y + 1][x] != "#") {
+							y++;
+						}
+						break;
+					case '<':
+						if (level[y][x - 1] != "#") {
+							x--;
+						}
+						break;
+					case '>':
+						if (level[y][x + 1] != "#") {
+							x++;
+						}
+						break;
+				}
+				path.push([x, y]);
+			}
+			return path;
+		}
+
+
+		// STOP SIMULATION
+		genetic.generation = function(pop, generation, stats) {
+			// stop running once we've reached the solution
+			var exitX = this.userData["exitX"];
+			var exitY = this.userData["exitY"];
+
+			var path = this.process_entity(pop[0].entity);
+			var last = path[path.length - 1];
+
+			if (last[0] == exitX && last[1] == exitY) {
+				return false;
+			} else {
+				return true;
+			}
+		};
+
+
+		// OUTPUT PROGRESS NOTIFICATIONS
+		genetic.notification = function(pop, generation, stats, isFinished) {
+
+			function lerp(a, b, p) {
+				return a + (b - a) * p;
+			}
+
+			var value = pop[0].entity;
+			this.last = this.last || value;
+
+			if (pop != 0 && value == this.last)
+				return;
+
+			// Process path
+			this.resetMap();
+			var x = this.userData["startX"];
+			var y = this.userData["startY"];
+			var path = this.process_entity(value);
+			var last = path[path.length - 1];
+			for (var i = 0; i < path.length - 1; i++) {
+				var cell = $('#grid tbody')[0].rows[path[i][1]].cells[path[i][0]];
+				var $cell = $(cell);
+				$cell.removeClass();
+				$cell.addClass('path');
+				$cell.html(value[i]);
+			}
+
+			// Output progress table
+			var solution = [];
+			var pathSize = 0;
+			for (var i = 0; i < path.length - 1; i++) {
+				var style = "background: transparent;";
+				if (path[i][0] == path[i + 1][0] && path[i][1] == path[i + 1][1]) {
+					var style = "background: rgb(200,0,50); color: #fff;";
+					solution.push("<span style=\"" + style + "\">" + value[i] + "</span>");
+				} else {
+					solution.push("<span style=\"" + style + "\">" + value[i] + "</span>");
+					pathSize++;
+				}
+			}
+
+			// Prepend row
+			var buf = "";
+			buf += "<tr>";
+			buf += "<td>" + generation + "</td>";
+			buf += "<td>" + pop[0].fitness.toPrecision(5) + "</td>";
+			buf += "<td class='solution'>" + solution.join("") + "</td>";
+			buf += "<td>" + last[0] + "</td>";
+			buf += "<td>" + last[1] + "</td>";
+			buf += "<td>" + pathSize + "</td>";
+			buf += "</tr>";
+			$("#results tbody").prepend(buf);
+
+			// KEEP LAST VALUE
+			this.last = value;
+		};
+
+
+		// START MAZE SOLVER
+		$(document).ready(function() {
+
+			genetic.drawMap();
+
+			// Listen to key inputs
+			$("#userpath").keydown(function(e) {
+				var userpath = $("#userpath").val();
+				switch (e.keyCode) {
+					default: console.log("Wrong input...");
+					break;
+					case 37:
+							$("#userpath").val(userpath + "<");
+						break;
+					case 39:
+							$("#userpath").val(userpath + ">");
+						break;
+					case 38:
+							$("#userpath").val(userpath + "^");
+						break;
+					case 40:
+							$("#userpath").val(userpath + "v");
+						break;
+				}
+				$("#trace").trigger("click");
+				return false;
+			});
+
+			// Detect start and end from level
+			for (var y = 0; y < level.length; y++) {
+				for (var x = 0; x < level[0].length; x++) {
+					if (level[y][x] == "S") {
+						startX = x;
+						startY = y;
+					} else if (level[y][x] == "F") {
+						exitX = x;
+						exitY = y;
+					}
+				}
+			}
+
+			// Modify Maze
+			$("#grid tbody td").click(function() {
+				String.prototype.replaceAt = function(index, character) {
+					return this.substr(0, index) + character + this.substr(index + character.length);
+				}
+				genetic.resetMap();
+				var x = parseInt($(this).index());
+				var y = parseInt($(this).parent().index());
+				var cell = $('#grid tbody')[0].rows[y].cells[x];
+				var $cell = $(cell);
+				$cell.removeClass();
+				if (level[y][x] == "#") {
+					level[y] = level[y].replaceAt(x, " ");
+				} else if (level[y][x] == " ") {
+					level[y] = level[y].replaceAt(x, "#");
+					$cell.addClass('wall');
+				}
+			});
+
+			// Manual trace
+			$("#trace").click(function() {
+				genetic.resetMap();
+				var userPath = $('#userpath').val();
+				var x = startX;
+				var y = startY;
+				for (var i = 0; i < userPath.length; i++) {
+					switch (userPath[i]) {
+						default: console.log("Wrong input...");
+						break;
+						case '^':
+								if (level[y - 1][x] != "#") {
+								y--;
+							}
+							break;
+						case 'v':
+								if (level[y + 1][x] != "#") {
+								y++;
+							}
+							break;
+						case '<':
+								if (level[y][x - 1] != "#") {
+								x--;
+							}
+							break;
+						case '>':
+								if (level[y][x + 1] != "#") {
+								x++;
+							}
+							break;
+					}
+					var cell = $('#grid tbody')[0].rows[y].cells[x];
+					var $cell = $(cell);
+					$cell.removeClass().addClass('path');
+					$cell.html(userPath[i]);
+				}
+			});
+
+			// Replay sequence
+			$('body').on('click', '#results tbody tr', function(event) {
+    		var path = $(this).closest('tr').find("td:eq(2)").text();
+				console.log('Replay: ' + path);
+				$('#userpath').val(path);
+				$('#trace').trigger('click');
+			});
+
+			// Launch trace
+			$("#solve").click(function() {
+
+				$("#results tbody").html("");
+
+				var config = {
+					"iterations": 3000,
+					"size": 250,
+					"crossover": 0.3,
+					"mutation": 0.3,
+					"fittestAlwaysSurvives": false,
+					"skip": 20
+				};
+
+				var userData = {
+					"level": level,
+					"startX": startX,
+					"startY": startY,
+					"exitX": exitX,
+					"exitY": exitY
+				};
+
+				genetic.evolve(config, userData);
+			});
+		});
+	</script>
+
+
+</body>
+
+</html>

@@ -7,10 +7,26 @@
 // Game mechanics
 // TODO: Implement game over high score save
 // TODO: Create a historical 3D view of the propagation and merging of clusters
+// TODO: redisplay using threeJS
+// TODO: Clean global and local variables
+// TODO: Switch to class code
+// TODO: Implement TDD
+// TODO: Lint code
+// TODO: X and Y are switched
 // Display
 // TODO: Persist gametype display
 // TODO: Display first selected cell with bold
 // TODO: Prune null cluster to free css color classes
+// AI
+// TODO: Implement self playing AI
+// TODO: Implement a js eval textarea field where you can test your AI
+// TODO: Each error creates a -/+ polarity when two common polarities touch they switch
+// TODO: List connected clusters with flood fill
+// TODO: Height of the center of the cluster, that gives a score to the cluster
+// Network
+// TODO: Migrate the error generation part to avoid cheating
+// TODO: Create a highscore chart
+
 
 // GLOBAL VARIABLES
 var gridSize = 8;
@@ -21,7 +37,7 @@ var num = 0;
 var type = "Number";
 var score = 0;
 var errorRate = 5;
-var gameover = false;
+var gameOver = false;
 
 // INITIALIZE CLUSTERS & ANYONS ARRAY
 var anyons = [];
@@ -141,7 +157,11 @@ function checkSpanners() {
             spanners += (clusters[0][x] == clusters[gridSize - 1][y]) * clusters[0][x];
         }
     }
-    return spanners > 0 ? true : false;
+    if (spanners > 0) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
@@ -171,6 +191,25 @@ function countMoves() {
 }
 
 
+// ORDERED CLUSTER LIST
+function generateClusterList() {
+    clusterList = [];
+    for (var clust = 0; clust < clusterNum + 1; clust++) {
+        clusterList[clust] = [];
+        for (var y = 0; y < gridSize; y++) {
+            for (var x = 0; x < gridSize; x++) {
+                if (clusters[x][y] == clust && clusters[x][y] != 0) {
+                    clusterList[clust].push([x, y]);
+                }
+            }
+        }
+    }
+    clusterList.sort(function(a, b) {
+        return b.length - a.length;
+    });
+}
+
+
 // MOVES
 function move(x1, y1, x2, y2) {
     countMoves();
@@ -195,8 +234,9 @@ function move(x1, y1, x2, y2) {
     }
 
     // check for spanners
-    if (checkSpanners()) {
+    if (checkSpanners() == true) {
         gameOver = true;
+        alert('GAME OVER!');
 
     } else {
         // empty anyons array
@@ -298,39 +338,88 @@ function updateCell(x, y, val) {
 }
 
 
+//------------------------AI----------------------------------------------------
+function propagatePolarity() {
+    polarityGrid = [];
+    for (var x = 0; x < gridSize; x++) {
+        polarityGrid[x] = [];
+        for (var y = 0; y < gridSize; y++) {
+
+        }
+    }
+}
+
+function clusterScore() {
+}
+
+function connectedClusters() {
+    var connectedClusters = [];
+}
+
+
+//------------------------HELPERS-----------------------------------------------
+// GET ADJACENT CELLS
+function adjacentCells(x, y){
+  let adjacentCells = [];
+  // get up
+  if (x > 1){
+      adjacentCells.push([x - 1, y]);
+  }
+  // get down
+  if (x < gridSize - 1){
+      adjacentCells.push([x + 1, y]);
+  }
+  // get left
+  if (y > 1){
+      adjacentCells.push([x, y - 1]);
+  }
+  // get right
+  if (y < gridSize - 1){
+      adjacentCells.push([x, y + 1]);
+  }
+  console.log(adjacentCells.toString());
+  return adjacentCells;
+}
+
+
+// FILTER BLANK CELLS
+function filterBlankCells(cells) {
+  let fullCells = [];
+  for (var i = 0; i < cells.length; i++) {
+    if (anyons[secs % 50][cells[i][0]][cells[i][1]] != 0){
+        fullCells.push(cells[i]);
+    }
+  }
+  console.log(fullCells.toString());
+  return fullCells;
+}
+
+
+// HIGHLIGHT CELLS
+function highlightCells(cells) {
+    for (var i = 0; i < cells.length; i++){
+      let x = cells[i][0];
+      let y = cells[i][1];
+      let cell = $('#grid tbody')[0].rows[x].cells[y];
+      let $cell = $(cell);
+      $cell.toggleClass('highlight');
+    }
+}
+
+
 //------------------------CONTROLS----------------------------------------------
 // DISPLAY CLUSTERS
 function displayClusters() {
     $('#clusters tbody').empty();
-
-    // get ordered list of clusters
-    var clusterList = [];
-    for (var clust = 0; clust < clusterNum + 1; clust++) {
-        clusterList[clust] = [];
-        for (var y = 0; y < gridSize; y++) {
-            for (var x = 0; x < gridSize; x++) {
-                if (clusters[x][y] == clust && clusters[x][y] != 0) {
-                    clusterList[clust].push([x, y]);
-                }
-            }
-        }
-    }
-    // Sort array by size
-    clusterList.sort(function(a, b) {
-        return b.length - a.length;
-    });
-    // display list in a table
-    for (var x = 0; x < clusterNum; x++) {
-        if (clusterList[x].length > 0) {
-            var row = "";
-            row += "<tr>";
-            row += "<td>" + x + "</td>";
-            row += "<td>" + clusterList[x].length + "</td>";
-            row += "<td>" + threatLevel(clusterList[x]) + "</td>";
-            row += "<td>" + clusterList[x].toString() + "</td>";
-            row += "</tr>";
-            $('#clusters tbody').append(row);
-        }
+    for (var x = 0; x < clusterList.length; x++) {
+        var row = "";
+        row += "<tr>";
+        row += "<td>" + x + "</td>";
+        row += "<td>" + clusterList[x].length + "</td>";
+        row += "<td>" + threatLevel(clusterList[x]) + "</td>";
+        row += "<td>" + clusterList[x].toString() + "</td>";
+        row += "</tr>";
+        $('#clusters tbody').append(row);
     }
 }
 
@@ -376,7 +465,6 @@ $(document).ready(function() {
             newVal = move(fromX, fromY, x, y);
             updateCell(fromX, fromY, 0);
             updateCell(x, y, newVal);
-            displayClusters();
             dragging = false;
 
         } else {
@@ -386,6 +474,18 @@ $(document).ready(function() {
         displayGrid();
     });
 
+    // Debug position
+    $("#grid tbody td").hover(function() {
+        var y = parseInt($(this).index());
+        var x = parseInt($(this).parent().index());
+        var cells;
+        $("#coord").html("["+x+", "+y+"]");
+        cells = adjacentCells(x, y);
+        cells = filterBlankCells(cells);
+        highlightCells(cells);
+      });
+
+
     // Controls
     $("#newgame").click(function() {
         newGame();
@@ -393,7 +493,6 @@ $(document).ready(function() {
     $("#error").click(function() {
         generateError();
         displayGrid();
-        displayClusters();
     });
     $("input[name='gametype']").change(function() {
         type = $(this).val();

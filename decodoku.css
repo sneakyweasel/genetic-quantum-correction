@@ -8,18 +8,21 @@ html {
     text-align: center; }
 
 td, th {
-  width: 25px;
-  height: 25px;
-  text-align: center; }
+  width: 30px;
+  height: 30px;
+  text-align: center;
+  font-size: 20px; }
 
 /* GRID */
 #grid {
-  width: 250px;
+  width: 300px;
   display: block;
   margin-left: auto;
   margin-right: auto; }
   #grid td {
     border: 1px solid white; }
+  #grid .highlight {
+    text-decoration: underline; }
   #grid .group0 {
     background-color: maroon; }
   #grid .group1 {
@@ -44,6 +47,36 @@ td, th {
     background-color: cyan; }
   #grid .group11 {
     background-color: blue; }
+  #grid .group12 {
+    background-color: orange;
+    font-style: italic; }
+  #grid .group13 {
+    background-color: navy;
+    font-style: italic; }
+  #grid .group14 {
+    background-color: olive;
+    font-style: italic; }
+  #grid .group15 {
+    background-color: green;
+    font-style: italic; }
+  #grid .group16 {
+    background-color: purple;
+    font-style: italic; }
+  #grid .group17 {
+    background-color: magenta;
+    font-style: italic; }
+  #grid .group18 {
+    background-color: lime;
+    font-style: italic; }
+  #grid .group19 {
+    background-color: teal;
+    font-style: italic; }
+  #grid .group20 {
+    background-color: cyan;
+    font-style: italic; }
+  #grid .group21 {
+    background-color: blue;
+    font-style: italic; }
   #grid .selected {
     font-size: 16px; }
 
