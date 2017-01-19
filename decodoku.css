@@ -14,71 +14,70 @@ td, th {
   font-size: 20px; }
 
 /* GRID */
-#grid {
+#grid, #clusterGrid {
   width: 300px;
-  display: block;
   margin-left: auto;
   margin-right: auto; }
-  #grid td {
+  #grid td, #clusterGrid td {
     border: 1px solid white; }
-  #grid .highlight {
+  #grid .highlight, #clusterGrid .highlight {
     text-decoration: underline;
     background-color: white; }
-  #grid .group0 {
+  #grid .group0, #clusterGrid .group0 {
     background-color: maroon; }
-  #grid .group1 {
+  #grid .group1, #clusterGrid .group1 {
     background-color: red; }
-  #grid .group2 {
+  #grid .group2, #clusterGrid .group2 {
     background-color: orange; }
-  #grid .group3 {
+  #grid .group3, #clusterGrid .group3 {
     background-color: navy; }
-  #grid .group4 {
+  #grid .group4, #clusterGrid .group4 {
     background-color: olive; }
-  #grid .group5 {
+  #grid .group5, #clusterGrid .group5 {
     background-color: green; }
-  #grid .group6 {
+  #grid .group6, #clusterGrid .group6 {
     background-color: purple; }
-  #grid .group7 {
+  #grid .group7, #clusterGrid .group7 {
     background-color: magenta; }
-  #grid .group8 {
+  #grid .group8, #clusterGrid .group8 {
     background-color: lime; }
-  #grid .group9 {
+  #grid .group9, #clusterGrid .group9 {
     background-color: teal; }
-  #grid .group10 {
+  #grid .group10, #clusterGrid .group10 {
     background-color: cyan; }
-  #grid .group11 {
+  #grid .group11, #clusterGrid .group11 {
     background-color: blue; }
-  #grid .group12 {
+  #grid .group12, #clusterGrid .group12 {
     background-color: orange;
     font-style: italic; }
-  #grid .group13 {
+  #grid .group13, #clusterGrid .group13 {
     background-color: navy;
     font-style: italic; }
-  #grid .group14 {
+  #grid .group14, #clusterGrid .group14 {
     background-color: olive;
     font-style: italic; }
-  #grid .group15 {
+  #grid .group15, #clusterGrid .group15 {
     background-color: green;
     font-style: italic; }
-  #grid .group16 {
+  #grid .group16, #clusterGrid .group16 {
     background-color: purple;
     font-style: italic; }
-  #grid .group17 {
+  #grid .group17, #clusterGrid .group17 {
     background-color: magenta;
     font-style: italic; }
-  #grid .group18 {
+  #grid .group18, #clusterGrid .group18 {
     background-color: lime;
     font-style: italic; }
-  #grid .group19 {
+  #grid .group19, #clusterGrid .group19 {
     background-color: teal;
     font-style: italic; }
-  #grid .group20 {
+  #grid .group20, #clusterGrid .group20 {
     background-color: cyan;
     font-style: italic; }
-  #grid .group21 {
+  #grid .group21, #clusterGrid .group21 {
     background-color: blue;
     font-style: italic; }
-  #grid .selected {
+  #grid .selected, #clusterGrid .selected {
     font-size: 16px; }
 
 /* CONTROLS */
@@ -87,4 +86,5 @@ td, th {
 
 /* CLUSTERS */
 #clusters td {
-  text-align: left; }
+  text-align: left;
+  font-size: 15px; }

@@ -7,6 +7,7 @@
 // OUTPUT: A list of 10 numbers describing grid movements
 
 // Game mechanics
+// TODO: Check move validity
 // TODO: Fix spanners check to interrupt game
 // TODO: Fix flood fill algorithm
 // TODO: redisplay using threeJS
@@ -191,7 +192,7 @@ function countMoves() {
     secs += 1;
     for (x = 0; x < gridSize; x += 1) {
         for (y = 0; y < gridSize; y += 1) {
-            anyons[secs][x][y] = anyons[(secs - 1) % 50][x][y];
+            anyons[secs][x][y] = anyons[secs - 1][x][y];
         }
     }
     $('#secs').html(secs);
@@ -202,7 +203,7 @@ function countMoves() {
 // ORDERED CLUSTER LIST
 function generateClusterList() {
     "use strict";
-    var x, y, indexes, i, j;
+    var x, y, indexes, i;
     clusterList = [];
     indexes = [];
     // Get cluster indexes
@@ -226,16 +227,10 @@ function generateClusterList() {
             }
         }
     }
-    // Update cluster with new pruned index
-    for (i = 0; i < clusterList.length; i++) {
-        for (j = 0; j < clusterList[i].length; j++) {
-            clusters[clusterList[i][j][0]][clusterList[i][j][1]] == i;
-        }
-    }
-
     clusterList.sort(function (a, b) {
         return b.length - a.length;
     });
+    console.log(JSON.stringify(clusterList));
     return clusterList;
 }
 
@@ -245,14 +240,14 @@ function move(x1, y1, x2, y2) {
     "use strict";
     var oldCluster, x, y, newVal;
     countMoves();
-    //console.log("Move from [" + x1 + ", " + y1 + "][" + clusters[x1][y1] + "] to [" + x2 + ", " + y2 + "][" + clusters[x2][y2] + "]");
     newVal = (anyons[secs][x1][y1] + anyons[secs][x2][y2]) % d;
     anyons[secs][x1][y1] = 0;
     anyons[secs][x2][y2] = newVal;
 
-    // link clusters or move to empty cell
-    if (clusters[x2][y2] !== 0) {
+    // link clusters
+    if (clusters[x1][y1] !== 0 && clusters[x2][y2] !== 0) {
         oldCluster = clusters[x1][y1];
+        clusters[x1][y1] = 0;
         for (x = 0; x < gridSize; x += 1) {
             for (y = 0; y < gridSize; y += 1) {
                 if (clusters[x][y] === oldCluster) {
@@ -260,13 +255,15 @@ function move(x1, y1, x2, y2) {
                 }
             }
         }
-    } else {
+    // cells cancel each other
+    } else if (clusters[x1][y1] !== 0 && clusters[x2][y2] !== 0 && newVal === 0) {
+        clusters[x1][y1] = 0;
+        clusters[x2][y2] = 0;
+    // cells move to empty cell
+    } else if (clusters[x1][y1] !== 0 && clusters[x2][y2] === 0 && newVal !== 0) {
         clusters[x2][y2] = clusters[x1][y1];
         clusters[x1][y1] = 0;
     }
-
-    // display clusters
-    displayClusters();
 
     // check for spanners
     if (checkSpanners() === true) {
@@ -286,6 +283,7 @@ function move(x1, y1, x2, y2) {
         }
 
     }
+    displayClusterGrid();
     return newVal;
 }
 
@@ -302,6 +300,26 @@ function initGrid() {
             row.append(rowData);
         }
         $('#grid tbody').append(row);
+    }
+}
+
+
+// DISPLAY CLUSTER GRID
+function displayClusterGrid() {
+    "use strict";
+    var x, y, row, rowData;
+    $('#clusterGrid tbody').empty();
+    for (x = 0; x < gridSize; x += 1) {
+        row = $('<tr></tr>');
+        for (y = 0; y < gridSize; y += 1) {
+            if (clusters[x][y] === 0) {
+                rowData = $('<td></td>');
+            } else {
+                rowData = $('<td>' + clusters[x][y] + '</td>');
+            }
+            row.append(rowData);
+        }
+        $('#clusterGrid tbody').append(row);
     }
 }
 
@@ -519,7 +537,7 @@ function newGame() {
         newGame();
     }
     displayGrid();
-    displayClusters();
+    displayClusterGrid();
 }
 
 
