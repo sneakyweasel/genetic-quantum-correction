@@ -4,8 +4,9 @@
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <title>Quantum Error Correction</title>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
     <script src="decodoku.js"></script>
     <link rel="stylesheet" type="text/css" href="decodoku.css">
 </head>
@@ -31,11 +32,7 @@
     <div id="controls">
         <p>
             SECS:
-            <span id="secs"></span>
-        </p>
-        <p>
-            SCORE:
-            <span id="score"></span>
+            <span id="secs">0</span>
         </p>
         <p>
             COORD:
@@ -47,7 +44,9 @@
             <input type="radio" name="gametype" value="Cluster"> Cluster
         </p>
         <p>
-            <button id="error" type="button" name="prev">Add error</button>
+            <button id="prev" type="button" name="prev">Prev</button>
+            <button id="diff" type="button" name="diff">Diff</button>
+            <button id="error" type="button" name="error">Add error</button>
             <button id="newgame" type="button" name="newgame">New game</button>
         </p>
     </div>

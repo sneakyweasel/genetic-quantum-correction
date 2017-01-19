@@ -22,7 +22,8 @@ td, th {
   #grid td {
     border: 1px solid white; }
   #grid .highlight {
-    text-decoration: underline; }
+    text-decoration: underline;
+    background-color: white; }
   #grid .group0 {
     background-color: maroon; }
   #grid .group1 {
