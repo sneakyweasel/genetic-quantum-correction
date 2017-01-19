@@ -8,14 +8,13 @@
 
 // Game mechanics
 // TODO: Check move validity
-// TODO: Fix spanners check to interrupt game
 // TODO: Fix flood fill algorithm
-// TODO: redisplay using threeJS
 // TODO: Switch to class code
 // TODO: Implement TDD
 // TODO: X and Y are switched
 // Display
 // TODO: Prune null cluster to free css color classes
+// TODO: redisplay using threeJS
 // AI
 // TODO: Implement self playing AI
 // TODO: Implement a js eval textarea field where you can test your AI
@@ -106,13 +105,17 @@ function generateError() {
         anyons[secs][x1][y1] = (a + anyons[secs][x1][y1]) % d;
         anyons[secs][x2][y2] = (aa + anyons[secs][x2][y2]) % d;
         clusters[x1][y1] = clusters[x2][y2];
-        clusters[x2][y2] = clusters[x2][y2] * (anyons[secs][x2][y2] > 0);
+        if (anyons[secs][x2][y2] === 0) {
+            clusters[x2][y2] = 0;
+        }
         num += 1;
     } else if (anyons[secs][x1][y1] > 0 && anyons[secs][x2][y2] === 0) {
         anyons[secs][x1][y1] = (a + anyons[secs][x1][y1]) % d;
         anyons[secs][x2][y2] = (aa + anyons[secs][x2][y2]) % d;
         clusters[x2][y2] = clusters[x1][y1];
-        clusters[x1][y1] = clusters[x1][y1] * (anyons[secs][x1][y1] > 0);
+        if (anyons[secs][x1][y1] === 0) {
+            clusters[x1][y1] = 0;
+        }
         num += 1;
 
         // Merge with existing cluster or merge clusters
@@ -163,7 +166,6 @@ function checkSpanners() {
         }
     }
     if (spanners > 0) {
-        alert("GAME OVER");
         return true;
     }
 }
@@ -215,7 +217,7 @@ function generateClusterList() {
         }
     }
     indexes = _.uniq(indexes);
-    clusterNum = indexes.length;
+    //clusterNum = indexes.length;
     // Populate clusters
     for (i = 0; i < indexes.length; i += 1) {
         clusterList[i] = [];
@@ -240,14 +242,10 @@ function move(x1, y1, x2, y2) {
     "use strict";
     var oldCluster, x, y, newVal;
     countMoves();
-    newVal = (anyons[secs][x1][y1] + anyons[secs][x2][y2]) % d;
-    anyons[secs][x1][y1] = 0;
-    anyons[secs][x2][y2] = newVal;
 
-    // link clusters
-    if (clusters[x1][y1] !== 0 && clusters[x2][y2] !== 0) {
+    // cluster and anyons update
+    if ((anyons[secs][x2][y2] > 0) && (clusters[x2][y2] !== clusters[x1][y1]) && clusters[x1][y1] !== 0) {
         oldCluster = clusters[x1][y1];
-        clusters[x1][y1] = 0;
         for (x = 0; x < gridSize; x += 1) {
             for (y = 0; y < gridSize; y += 1) {
                 if (clusters[x][y] === oldCluster) {
@@ -255,15 +253,19 @@ function move(x1, y1, x2, y2) {
                 }
             }
         }
-    // cells cancel each other
-    } else if (clusters[x1][y1] !== 0 && clusters[x2][y2] !== 0 && newVal === 0) {
-        clusters[x1][y1] = 0;
-        clusters[x2][y2] = 0;
-    // cells move to empty cell
-    } else if (clusters[x1][y1] !== 0 && clusters[x2][y2] === 0 && newVal !== 0) {
-        clusters[x2][y2] = clusters[x1][y1];
-        clusters[x1][y1] = 0;
     }
+    // add it to the destination
+    newVal = (anyons[secs][x1][y1] + anyons[secs][x2][y2]) % 10;
+    anyons[secs][x2][y2] = newVal;
+    // carry the cluster with it, except for the case of annihilation
+    if (anyons[secs][x2][y2] === 0) {
+        clusters[x2][y2] = 0;
+    } else {
+        clusters[x2][y2] = clusters[x1][y1];
+    }
+    // remove it from the initial position
+    anyons[secs][x1][y1] = 0;
+    clusters[x1][y1] = 0;
 
     // check for spanners
     if (checkSpanners() === true) {
