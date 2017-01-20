@@ -22,7 +22,7 @@ td, th {
     border: 1px solid white; }
   #grid .highlight, #clusterGrid .highlight {
     text-decoration: underline;
-    background-color: white; }
+    font-style: italic; }
   #grid .group0, #clusterGrid .group0 {
     background-color: maroon; }
   #grid .group1, #clusterGrid .group1 {

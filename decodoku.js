@@ -7,23 +7,23 @@
 // OUTPUT: A list of 10 numbers describing grid movements
 
 // Game mechanics
-// TODO: Check move validity
-// TODO: Fix flood fill algorithm
-// TODO: Switch to class code
 // TODO: Implement TDD
-// TODO: X and Y are switched
+// TODO: Create a highscore chart
+// TODO: Implement an auto replay feature
+// TODO: Create a loading anyons grid
 // Display
 // TODO: Prune null cluster to free css color classes
 // TODO: redisplay using threeJS
 // AI
+// TODO: Implement secs for noise generation
 // TODO: Implement self playing AI
 // TODO: Implement a js eval textarea field where you can test your AI
 // TODO: Each error creates a -/+ polarity when two common polarities touch they switch
 // TODO: Height of the center of the cluster, that gives a score to the cluster
 // TODO: Use genetic algorithm to guide towards best solving patterns
+// TODO: Generate training data for AI
 // Network
 // TODO: Migrate the error generation part to avoid cheating
-// TODO: Create a highscore chart
 
 
 // GLOBAL VARIABLES
@@ -46,19 +46,44 @@ var clusterList = [];
 // RESET CLUSTER GRID AND ANYONS
 function resetAnyons() {
     "use strict";
-    var secs, x, y;
+    var i, x, y;
     clusterList = [];
-    for (secs = 0; secs < 50; secs += 1) {
-        anyons[secs] = [];
+    for (i = 0; i <= secs; i += 1) {
+        anyons[i] = [];
         for (x = 0; x < gridSize; x += 1) {
-            anyons[secs][x] = [];
+            anyons[i][x] = [];
             clusters[x] = [];
             for (y = 0; y < gridSize; y += 1) {
-                anyons[secs][x][y] = 0;
+                anyons[i][x][y] = 0;
                 clusters[x][y] = 0;
             }
         }
     }
+}
+
+// LOAD ANYONS
+function loadAnyons(anyonsString) {
+    "use strict";
+    var x, y;
+    for (x = 0; x < gridSize; x += 1) {
+        for (y = 0; y < gridSize; y += 1) {
+            anyons[secs][x][y] = anyonsString[y * gridSize + x];
+        }
+    }
+}
+
+
+// SAVE ANYONS
+function saveAnyons() {
+    "use strict";
+    var x, y, anyonsString;
+    anyonsString = "";
+    for (x = 0; x < gridSize; x += 1) {
+        for (y = 0; y < gridSize; y += 1) {
+            anyonsString += anyons[secs][x][y];
+        }
+    }
+    return anyonsString;
 }
 
 
@@ -91,6 +116,9 @@ function generateError() {
         }
     }
 
+    //console.log("Error 1: [" + x1 + ", " + y1 + "][" + a  + "][" + anyons[secs][x1][y1] + "]");
+    //console.log("Error 2: [" + x2 + ", " + y2 + "][" + aa + "][" + anyons[secs][x2][y2] + "]");
+
     // Add new error to new cluster
     if (anyons[secs][x1][y1] === 0 && anyons[secs][x2][y2] === 0) {
         anyons[secs][x1][y1] = a;
@@ -100,7 +128,7 @@ function generateError() {
         clusters[x2][y2] = clusterNum;
         num += 1;
 
-        // Add new error to existing cluster
+    // Add new error to existing cluster
     } else if (anyons[secs][x1][y1] === 0 && anyons[secs][x2][y2] > 0) {
         anyons[secs][x1][y1] = (a + anyons[secs][x1][y1]) % d;
         anyons[secs][x2][y2] = (aa + anyons[secs][x2][y2]) % d;
@@ -109,6 +137,7 @@ function generateError() {
             clusters[x2][y2] = 0;
         }
         num += 1;
+
     } else if (anyons[secs][x1][y1] > 0 && anyons[secs][x2][y2] === 0) {
         anyons[secs][x1][y1] = (a + anyons[secs][x1][y1]) % d;
         anyons[secs][x2][y2] = (aa + anyons[secs][x2][y2]) % d;
@@ -118,7 +147,7 @@ function generateError() {
         }
         num += 1;
 
-        // Merge with existing cluster or merge clusters
+    // Merge with existing cluster or merge clusters
     } else if (anyons[secs][x1][y1] > 0 && anyons[secs][x2][y2] > 0) {
         clusterOld = clusters[x2][y2];
         for (y = 0; y < gridSize; y += 1) {
@@ -130,8 +159,12 @@ function generateError() {
         }
         anyons[secs][x1][y1] = (a + anyons[secs][x1][y1]) % d;
         anyons[secs][x2][y2] = (aa + anyons[secs][x2][y2]) % d;
-        clusters[x1][y1] = clusters[x1][y1] * (anyons[secs][x1][y1] > 0);
-        clusters[x2][y2] = clusters[x2][y2] * (anyons[secs][x2][y2] > 0);
+        if (anyons[secs][x1][y1] === 0) {
+            clusters[x1][y1] = 0;
+        }
+        if (anyons[secs][x2][y2] === 0) {
+            clusters[x2][y2] = 0;
+        }
         // these are counted less towards num
         num += 0.1;
     }
@@ -192,6 +225,15 @@ function countMoves() {
     "use strict";
     var x, y;
     secs += 1;
+    // generate new secs array
+    anyons[secs] = [];
+    for (x = 0; x < gridSize; x += 1) {
+        anyons[secs][x] = [];
+        for (y = 0; y < gridSize; y += 1) {
+            anyons[secs][x][y] = 0;
+        }
+    }
+    // save previous secs array
     for (x = 0; x < gridSize; x += 1) {
         for (y = 0; y < gridSize; y += 1) {
             anyons[secs][x][y] = anyons[secs - 1][x][y];
@@ -217,7 +259,6 @@ function generateClusterList() {
         }
     }
     indexes = _.uniq(indexes);
-    //clusterNum = indexes.length;
     // Populate clusters
     for (i = 0; i < indexes.length; i += 1) {
         clusterList[i] = [];
@@ -255,7 +296,7 @@ function move(x1, y1, x2, y2) {
         }
     }
     // add it to the destination
-    newVal = (anyons[secs][x1][y1] + anyons[secs][x2][y2]) % 10;
+    newVal = (anyons[secs][x1][y1] + anyons[secs][x2][y2]) % d;
     anyons[secs][x2][y2] = newVal;
     // carry the cluster with it, except for the case of annihilation
     if (anyons[secs][x2][y2] === 0) {
@@ -285,7 +326,6 @@ function move(x1, y1, x2, y2) {
         }
 
     }
-    displayClusterGrid();
     return newVal;
 }
 
@@ -364,22 +404,20 @@ function displayGrid() {
     var x, y;
     for (y = 0; y < gridSize; y += 1) {
         for (x = 0; x < gridSize; x += 1) {
-            if (anyons[secs][x][y] !== 0) {
-                switch (type) {
-                case "Number":
-                    updateCell(x, y, anyons[secs][x][y]);
-                    break;
-                case "Phi":
-                    if (anyons[secs][x][y] === 5) {
-                        updateCell(x, y, "V");
-                    } else {
-                        updateCell(x, y, "#");
-                    }
-                    break;
-                case "Cluster":
-                    updateCell(x, y, clusters[x][y]);
-                    break;
+            switch (type) {
+            case "Number":
+                updateCell(x, y, anyons[secs][x][y]);
+                break;
+            case "Phi":
+                if (anyons[secs][x][y] === 5) {
+                    updateCell(x, y, "V");
+                } else {
+                    updateCell(x, y, "#");
                 }
+                break;
+            case "Cluster":
+                updateCell(x, y, clusters[x][y]);
+                break;
             }
         }
     }
@@ -464,13 +502,30 @@ function adjacentCluster(x, y) {
             for (i = 0; i < cells.length; i += 1) {
                 if (containsCoords(cells[i][0], cells[i][1], queue) === false && containsCoords(cells[i][0], cells[i][1], cluster) === false) {
                     queue.push(cells[i]);
-                    //console.log(JSON.stringify(queue));
                 }
             }
         }
     }
     return cluster;
 }
+
+
+// CLUSTER VALIDITY REMAINS
+function clusterRemain(cluster) {
+    "use strict";
+    var i, total;
+    total = 0;
+    for (i = 0; i < cluster.length; i += 1) {
+        total += anyons[secs][cluster[i][0]][cluster[i][1]];
+    }
+    if (total % d === 0) {
+        console.log("Valid cluster: " + JSON.stringify(cluster));
+    } else {
+        console.log("Invalid cluster: " + JSON.stringify(cluster) + " total: " + total);
+    }
+    return total;
+}
+
 
 // COMPARE HISTORICAL ANYONS ARRAY
 function anyonsDifference() {
@@ -525,6 +580,28 @@ function displayClusters() {
 }
 
 
+//------------------------AI----------------------------------------------------
+function reconstructClusters(x, y) {
+    "use strict";
+    var aiClusters, cluster, i, total;
+    total = 0;
+    aiClusters = [];
+    cluster = adjacentCluster(x, y);
+
+    // debug cluster
+    console.log("Cluster sum: " + clusterRemain(cluster) + " - ");
+
+    // if cluster is valid, segment cluster in matching elements
+    if (clusterRemain(cluster) === 0 && cluster.lenght % 2 === 0) {
+        // find pairs of matches
+
+    } else if (clusterRemain(cluster) === 0 && cluster.lenght % 2 !== 0) {
+
+    }
+
+}
+
+
 //------------------------MAIN--------------------------------------------------
 // NEW GAME
 function newGame() {
@@ -539,7 +616,6 @@ function newGame() {
         newGame();
     }
     displayGrid();
-    displayClusterGrid();
 }
 
 
@@ -561,7 +637,7 @@ $(document).ready(function () {
             dragging = true;
         } else if (dragging === true && fromX === x && fromY === y) {
             dragging = false;
-        } else if (dragging === true && (
+        } else if (dragging === true && anyons[secs][fromX][fromY] !== 0 && (
                 (fromX + 1 === x && fromY === y) ||
                 (fromX - 1 === x && fromY === y) ||
                 (fromX === x && fromY + 1 === y) ||
@@ -586,6 +662,9 @@ $(document).ready(function () {
         x = parseInt($(this).parent().index(), 10);
         $("#coord").html("[" + x + ", " + y + "]");
         cells = adjacentCluster(x, y);
+        if (cells.length > 0) {
+            reconstructClusters(x, y);
+        }
         highlightCells(cells);
     });
 
