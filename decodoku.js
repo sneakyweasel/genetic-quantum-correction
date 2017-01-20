@@ -15,8 +15,10 @@
 // TODO: Prune null cluster to free css color classes
 // TODO: redisplay using threeJS
 // AI
+// TODO: Implement divide and conquer strategy
+// TODO: Reformulate problem to be genetic algorithm compatible
+// TODO: Consider puzzle as a collapsing graph
 // TODO: Implement secs for noise generation
-// TODO: Implement self playing AI
 // TODO: Implement a js eval textarea field where you can test your AI
 // TODO: Each error creates a -/+ polarity when two common polarities touch they switch
 // TODO: Height of the center of the cluster, that gives a score to the cluster
@@ -41,6 +43,20 @@ var anyons = [];
 var clusters = [];
 var clusterList = [];
 
+// PUZZLES
+var puzzles = [
+    "6003907404044709030003000700000004550000064037642865550000000582",
+    "1200072807000300460030008700770005839300046000550440091206600134",
+    "6601200008070191906000011540020805006891045643009954075008000005",
+    "0000000000337019007730005808264007006055073040003375509070055092",
+    "2727805051332053000009973100411079406730006000001903780700000203",
+    "7300700100003027600000194064004003730024070000462856827301440091",
+    "9530005368910057028960000300400907000371000028054003900560071631",
+    "6608200008000082002419030081000701037640094236090060846600084045",
+    "5820002054646005000000867373009000911900820009000914012800060037",
+    "2170835507040902030658006400502073195880010078237900016130071119"
+];
+
 
 //------------------------GAME LOGIC--------------------------------------------
 // RESET CLUSTER GRID AND ANYONS
@@ -61,14 +77,20 @@ function resetAnyons() {
     }
 }
 
+
 // LOAD ANYONS
 function loadAnyons(anyonsString) {
     "use strict";
-    var x, y;
+    var x, y, total;
+    total = 0;
     for (x = 0; x < gridSize; x += 1) {
         for (y = 0; y < gridSize; y += 1) {
-            anyons[secs][x][y] = anyonsString[y * gridSize + x];
+            anyons[secs][y][x] = parseInt(anyonsString[y * gridSize + x], 10);
+            total += parseInt(anyons[secs][y][x], 10);
         }
+    }
+    if (total % d !== 0) {
+        alert('Inconsistent problem error');
     }
 }
 
@@ -80,7 +102,7 @@ function saveAnyons() {
     anyonsString = "";
     for (x = 0; x < gridSize; x += 1) {
         for (y = 0; y < gridSize; y += 1) {
-            anyonsString += anyons[secs][x][y];
+            anyonsString += anyons[secs][y][x];
         }
     }
     return anyonsString;
@@ -326,7 +348,6 @@ function move(x1, y1, x2, y2) {
         }
 
     }
-    return newVal;
 }
 
 
@@ -581,22 +602,72 @@ function displayClusters() {
 
 
 //------------------------AI----------------------------------------------------
+// SEGMENT CLUSTER
+// if cluster neighbour cancel each other remove them from the cluster
+// reduce search space to avoid expensive computation
+// remove cells that are sure
+function segmentCluster(cluster) {
+    "use strict";
+    var x1, y1, x2, y2, i, cells;
+    for (i = 0; i < cluster.length; i += 1) {
+        x1 = cluster[i][0];
+        y1 = cluster[i][1];
+        cells = adjacentCells(x1, y1);
+        if (cells.length === 1) {
+            x2 = cells[0][0];
+            y2 = cells[0][1];
+            if ((anyons[secs][x1][y1] + anyons[secs][x2][y2]) % d === 0) {
+                console.log("Found match between [" + x1 + " , " + y1 + "] and [" + x2 + " , " + y2 + "]");
+                highlightCells([[x1, y1], [x2, y2]]);
+            }
+        }
+    }
+}
+
+
+// PRUNE CLUSTER
+function pruneCluster(cluster) {
+    "use strict";
+    var x1, y1, x2, y2, i, edgeCells;
+    edgeCells = [];
+
+    // if cell has only one adjacent cell and their sum % d is 0
+    if (cluster.lenght === 2) {
+        x1 = cluster[0][0];
+        y1 = cluster[0][1];
+        x2 = cluster[1][0];
+        y2 = cluster[1][1];
+        move(x1, y1, x2, y2);
+
+    // if 3 cells compose a cluster and their sum %d is 0
+    // find center cell and move the two others towards it
+    } else if (cluster.lenght === 3 && clusterRemain(cluster) === 0) {
+        for (i = 0; i < cluster.length; i += 1) {
+            if (adjacentCells(cluster[i][0], cluster[i][1]).length === 2) {
+                x2 = cluster[i][0];
+                y2 = cluster[i][1];
+            } else {
+                edgeCells.push(cluster[i]);
+            }
+            move(edgeCells[0][0], edgeCells[0][1], x2, y2);
+            move(edgeCells[1][0], edgeCells[1][1], x2, y2);
+        }
+    }
+}
+
+
+// RECONSTRUCT CLUSTER
 function reconstructClusters(x, y) {
     "use strict";
-    var aiClusters, cluster, i, total;
-    total = 0;
-    aiClusters = [];
+    var cluster;
     cluster = adjacentCluster(x, y);
 
     // debug cluster
-    console.log("Cluster sum: " + clusterRemain(cluster) + " - ");
+    console.log("Cluster sum: " + clusterRemain(cluster));
 
     // if cluster is valid, segment cluster in matching elements
     if (clusterRemain(cluster) === 0 && cluster.lenght % 2 === 0) {
-        // find pairs of matches
-
-    } else if (clusterRemain(cluster) === 0 && cluster.lenght % 2 !== 0) {
-
+        segmentCluster(cluster);
     }
 
 }
@@ -621,9 +692,19 @@ function newGame() {
 
 $(document).ready(function () {
     "use strict";
-    var dragging, fromX, fromY, x, y, newVal, cells;
+    var dragging, fromX, fromY, x, y, cells, puzzleNum, i;
     initGrid();
-    newGame();
+    //newGame();
+    resetAnyons();
+    loadAnyons(puzzles[0]);
+    displayGrid();
+    displayClusters();
+
+
+    // Populate puzzle select
+    for (i = 0; i < puzzles.length; i += 1) {
+        $("#puzzles").append('<option value="' + i + '">' + (i + 1) + '</option>');
+    }
 
     // Player moves
     dragging = false;
@@ -644,10 +725,9 @@ $(document).ready(function () {
                 (fromX === x && fromY - 1 === y)
             )
                 ) {
-            newVal = move(fromX, fromY, x, y);
-            updateCell(fromX, fromY, 0);
-            updateCell(x, y, newVal);
+            move(fromX, fromY, x, y);
             dragging = false;
+            displayGrid();
 
         } else {
             console.log("Movement error...");
@@ -669,6 +749,13 @@ $(document).ready(function () {
     });
 
     // Controls
+    $("#load").click(function () {
+        puzzleNum = $("#puzzles").val();
+        console.log(puzzleNum);
+        resetAnyons();
+        loadAnyons(puzzles[puzzleNum]);
+        displayGrid();
+    });
     $("#prev").click(function () {
         if (secs > 0) {
             secs -= 1;
