@@ -7,8 +7,9 @@
 // OUTPUT: A list of 10 numbers describing grid movements
 
 // Game mechanics
-// TODO: Disable noise generation for puzzle solving
 // TODO: Create a cluster and a cell class
+// TODO: Disable noise generation for puzzle solving
+// TODO: Implement secs for noise generation
 // TODO: Implement TDD
 // TODO: Implement an auto replay feature
 // Display
@@ -18,7 +19,6 @@
 // TODO: Implement divide and conquer strategy
 // TODO: Reformulate problem to be genetic algorithm compatible
 // TODO: Consider puzzle as a collapsing graph
-// TODO: Implement secs for noise generation
 // TODO: Implement a js eval textarea field where you can test your AI
 // TODO: Score grid on the number of adjacent cells
 // TODO: Use genetic algorithm to guide towards best solving patterns
@@ -34,9 +34,7 @@ var secs = 0;
 var d = 10;
 var clusterNum = 0;
 var type = "Number";
-var score = 0;
 var errorRate = 5;
-var gameOver = false;
 
 // INITIALIZE CLUSTERS & ANYONS ARRAY
 var anyons = [];
@@ -57,30 +55,6 @@ var puzzles = [
     "2170835507040902030658006400502073195880010078237900016130071119"
 ];
 
-//------------------------CLASSES-----------------------------------------------
-class Cell {
-    constructor(x, y, cluster) {
-        this.x = x;
-        this.y = y;
-        this.cluster = cluster;
-    }
-
-    static distance(a, b) {
-        Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-    }
-
-    move(dest) {
-
-    }
-}
-
-
-class Cluster {
-    constructor(cells) {
-        this.cells = cells;
-    }
-
-}
 
 //------------------------GAME LOGIC--------------------------------------------
 // RESET CLUSTER GRID AND ANYONS
@@ -114,7 +88,7 @@ function loadAnyons(anyonsString) {
         }
     }
     if (total % d !== 0) {
-        alert('Inconsistent problem error');
+        alert("Inconsistent problem error");
     }
 }
 
@@ -285,7 +259,7 @@ function countMoves() {
             anyons[secs][x][y] = anyons[secs - 1][x][y];
         }
     }
-    $('#secs').html(secs);
+    $("#secs").html(secs);
     return secs;
 }
 
@@ -322,8 +296,7 @@ function move(x1, y1, x2, y2) {
 
     // check for spanners
     if (checkSpanners() === true) {
-        gameOver = true;
-        alert('GAME OVER!');
+        alert("GAME OVER!");
 
     } else {
         // empty anyons array
@@ -347,12 +320,12 @@ function initGrid() {
     "use strict";
     var x, y, row, rowData;
     for (y = 0; y < gridSize; y += 1) {
-        row = $('<tr></tr>');
+        row = $("<tr></tr>");
         for (x = 0; x < gridSize; x += 1) {
-            rowData = $('<td></td>');
+            rowData = $("<td></td>");
             row.append(rowData);
         }
-        $('#grid tbody').append(row);
+        $("#grid tbody").append(row);
     }
 }
 
@@ -363,7 +336,7 @@ function resetGrid() {
     var x, y, cell, $cell;
     for (x = 0; x < gridSize; x += 1) {
         for (y = 0; y < gridSize; y += 1) {
-            cell = $('#grid tbody')[0].rows[x].cells[y];
+            cell = $("#grid tbody")[0].rows[x].cells[y];
             $cell = $(cell);
             $cell.html(" ");
             $cell.removeClass();
@@ -376,7 +349,7 @@ function resetGrid() {
 function updateCell(x, y, val) {
     "use strict";
     var cell, $cell;
-    cell = $('#grid tbody')[0].rows[x].cells[y];
+    cell = $("#grid tbody")[0].rows[x].cells[y];
     $cell = $(cell);
     if (val === 0) {
         $cell.html("");
@@ -384,7 +357,7 @@ function updateCell(x, y, val) {
     } else {
         $cell.html(val);
         $cell.removeClass();
-        $cell.addClass('group' + clusters[x][y]);
+        $cell.addClass("group" + clusters[x][y]);
     }
 }
 
@@ -396,19 +369,19 @@ function displayGrid() {
     for (y = 0; y < gridSize; y += 1) {
         for (x = 0; x < gridSize; x += 1) {
             switch (type) {
-                case "Number":
-                    updateCell(x, y, anyons[secs][x][y]);
-                    break;
-                case "Phi":
-                    if (anyons[secs][x][y] === 5) {
-                        updateCell(x, y, "V");
-                    } else {
-                        updateCell(x, y, "#");
-                    }
-                    break;
-                case "Cluster":
-                    updateCell(x, y, clusters[x][y]);
-                    break;
+            case "Number":
+                updateCell(x, y, anyons[secs][x][y]);
+                break;
+            case "Phi":
+                if (anyons[secs][x][y] === 5) {
+                    updateCell(x, y, "V");
+                } else {
+                    updateCell(x, y, "#");
+                }
+                break;
+            case "Cluster":
+                updateCell(x, y, clusters[x][y]);
+                break;
             }
         }
     }
@@ -422,9 +395,9 @@ function highlightCells(cells) {
     for (i = 0; i < cells.length; i += 1) {
         x = cells[i][0];
         y = cells[i][1];
-        cell = $('#grid tbody')[0].rows[x].cells[y];
+        cell = $("#grid tbody")[0].rows[x].cells[y];
         $cell = $(cell);
-        $cell.toggleClass('highlight');
+        $cell.toggleClass("highlight");
     }
 }
 
@@ -433,18 +406,18 @@ function highlightCells(cells) {
 function displayClusterGrid() {
     "use strict";
     var x, y, row, rowData;
-    $('#clusterGrid tbody').empty();
+    $("#clusterGrid tbody").empty();
     for (x = 0; x < gridSize; x += 1) {
-        row = $('<tr></tr>');
+        row = $("<tr></tr>");
         for (y = 0; y < gridSize; y += 1) {
             if (clusters[x][y] === 0) {
-                rowData = $('<td></td>');
+                rowData = $("<td></td>");
             } else {
-                rowData = $('<td>' + clusters[x][y] + '</td>');
+                rowData = $("<td>" + clusters[x][y] + "</td>");
             }
             row.append(rowData);
         }
-        $('#clusterGrid tbody').append(row);
+        $("#clusterGrid tbody").append(row);
     }
 }
 
@@ -463,20 +436,6 @@ function listCells() {
         }
     }
     return cells;
-}
-
-
-// REMOVE FROM CLUSTER
-function removeFromCluster(x, y, cluster) {
-    "use strict";
-    var i, prunedCluster;
-    prunedCluster = [];
-    for (i = 0; i < cluster.length; i += 1) {
-        if (x !== cluster[i][0] && y !== cluster[i][1]) {
-            prunedCluster.push(cluster[i]);
-        }
-        return prunedCluster;
-    }
 }
 
 
@@ -561,11 +520,6 @@ function clusterRemain(cluster) {
     for (i = 0; i < cluster.length; i += 1) {
         total += anyons[secs][cluster[i][0]][cluster[i][1]];
     }
-    if (total % d === 0) {
-        console.log("Valid cluster: " + JSON.stringify(cluster));
-    } else {
-        console.log("Invalid cluster: " + JSON.stringify(cluster) + " total: " + total);
-    }
     return total % d;
 }
 
@@ -592,7 +546,6 @@ function shortestDistance(clust1, clust2) {
             }
         }
     }
-    console.log(JSON.stringify(closestCells));
     return closestCells;
 }
 
@@ -626,7 +579,6 @@ function generateClusterList() {
     clusterList.sort(function(a, b) {
         return b.length - a.length;
     });
-    console.log(JSON.stringify(clusterList));
     return clusterList;
 }
 
@@ -668,9 +620,9 @@ function threatLevel(cluster) {
 // DISPLAY CLUSTERS
 function displayClusters() {
     "use strict";
-    var x, row;
-    generateClusterList();
-    $('#clusters tbody').empty();
+    var x, row, clusterList;
+    clusterList = findContiguousClusters();
+    $("#clusters tbody").empty();
     for (x = 0; x < clusterList.length; x += 1) {
         row = "";
         row += "<tr>";
@@ -679,7 +631,7 @@ function displayClusters() {
         row += "<td>" + threatLevel(clusterList[x]) + "</td>";
         row += "<td>" + clusterList[x].toString() + "</td>";
         row += "</tr>";
-        $('#clusters tbody').append(row);
+        $("#clusters tbody").append(row);
     }
 }
 
@@ -691,20 +643,36 @@ function displayClusters() {
 // reduce search space to avoid expensive computation
 // remove cells that are sure
 
-// DIFF TWO CLUSTERS
-function substractCluster(clust1, clust2) {
-
+// DIFFERENCE BETWEEN CLUSTERS
+function differenceCluster(clust1, clust2) {
+    "use strict";
+    var i, j, cell1, cell2;
+    for (i = clust1.length - 1; i >= 0; i -= 1) {
+        cell1 = clust1[i];
+        for (j = 0; j < clust2.length; j += 1) {
+            cell2 = clust2[j];
+            if (cell1[0] === cell2[0] && cell1[1] === cell2[1]) {
+                clust1.splice(i, 1);
+            }
+        }
+    }
+    return clust1;
 }
 
 
 // FIND ALL CLUSTERS
 function findContiguousClusters() {
     "use strict";
-    var i, queue, cluster;
-    cells = listCells();
-    for (i = 0; i < cells.length; i += 1) {
-        cluster = adjacentCluster(cells[i][0], cells[i][i]);
+    var queue, cluster, clusterList, cell;
+    clusterList = [];
+    queue = listCells();
+    while (queue.length !== 0) {
+        cell = queue.pop();
+        cluster = adjacentCluster(cell[0], cell[1]);
+        clusterList.push(cluster);
+        queue = differenceCluster(queue, cluster);
     }
+    return clusterList;
 }
 
 
@@ -720,7 +688,7 @@ function segmentCluster(cluster) {
             x2 = cells[0][0];
             y2 = cells[0][1];
             if ((anyons[secs][x1][y1] + anyons[secs][x2][y2]) % d === 0) {
-                console.log("Found match between [" + x1 + " , " + y1 + "] and [" + x2 + " , " + y2 + "]");
+                //console.log("Found match between [" + x1 + " , " + y1 + "] and [" + x2 + " , " + y2 + "]");
                 //highlightCells([[x1, y1], [x2, y2]]);
                 move(x1, y1, x2, y2);
             }
@@ -767,7 +735,6 @@ function newGame() {
     "use strict";
     secs = 0;
     clusterNum = 0;
-    score = 0;
     resetAnyons();
     resetGrid();
     generateNoise();
@@ -791,7 +758,7 @@ $(document).ready(function() {
 
     // Populate puzzle select
     for (i = 0; i < puzzles.length; i += 1) {
-        $("#puzzles").append('<option value="' + i + '">' + (i + 1) + '</option>');
+        $("#puzzles").append("<option value='" + i + "'>" + (i + 1) + "</option>");
     }
 
     // Player moves
@@ -815,9 +782,7 @@ $(document).ready(function() {
             move(fromX, fromY, x, y);
             dragging = false;
             displayGrid();
-
         } else {
-            console.log("Movement error...");
             dragging = false;
         }
         displayGrid();
@@ -829,11 +794,11 @@ $(document).ready(function() {
         x = parseInt($(this).parent().index(), 10);
         $("#coord").html("[" + x + ", " + y + "]");
         cluster = adjacentCluster(x, y);
-        $('#cluster').html(JSON.stringify(cluster));
+        $("#cluster").html(JSON.stringify(cluster));
         if (clusterRemain(cluster) === 0) {
-            $('#cluster').css('background-color', 'green');
+            $("#cluster").css("background-color", "green");
         } else {
-            $('#cluster').css('background-color', 'red');
+            $("#cluster").css("background-color", "red");
         }
         if (cluster.length > 0) {
             segmentCluster(cluster);
@@ -844,10 +809,12 @@ $(document).ready(function() {
     // Controls
     $("#load").click(function() {
         puzzleNum = $("#puzzles").val();
-        console.log(puzzleNum);
         resetAnyons();
         loadAnyons(puzzles[puzzleNum]);
         displayGrid();
+    });
+    $("#save").click(function() {
+        saveAnyons();
     });
     $("#prev").click(function() {
         if (secs > 0) {
@@ -869,7 +836,6 @@ $(document).ready(function() {
     });
     $("input[name='gametype']").change(function() {
         type = $(this).val();
-        console.log(type);
         displayGrid();
     });
 });
