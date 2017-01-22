@@ -7,6 +7,8 @@
 // OUTPUT: A list of 10 numbers describing grid movements
 
 // Game mechanics
+// TODO: Implement game vs puzzle mode
+// TODO: Implement cluster solving cost
 // TODO: Create a cluster and a cell class
 // TODO: Disable noise generation for puzzle solving
 // TODO: Implement secs for noise generation
@@ -16,6 +18,7 @@
 // TODO: Prune null cluster to free css color classes
 // TODO: redisplay using threeJS
 // AI
+// TODO: Tensor strength is distance to other cluster
 // TODO: Implement divide and conquer strategy
 // TODO: Reformulate problem to be genetic algorithm compatible
 // TODO: Consider puzzle as a collapsing graph
@@ -38,6 +41,7 @@ var errorRate = 5;
 
 // INITIALIZE CLUSTERS & ANYONS ARRAY
 var anyons = [];
+var computeGrid = [];
 var clusters = [];
 var clusterList = [];
 
@@ -61,15 +65,16 @@ var puzzles = [
 function resetAnyons() {
     "use strict";
     var i, x, y;
-    clusterList = [];
     for (i = 0; i <= secs; i += 1) {
         anyons[i] = [];
         for (x = 0; x < gridSize; x += 1) {
             anyons[i][x] = [];
             clusters[x] = [];
+            computeGrid[x] = [];
             for (y = 0; y < gridSize; y += 1) {
                 anyons[i][x][y] = 0;
                 clusters[x][y] = 0;
+                computeGrid[x][y] = 0;
             }
         }
     }
@@ -628,6 +633,8 @@ function displayClusters() {
         row += "<tr>";
         row += "<td>" + (x + 1) + "</td>";
         row += "<td>" + clusterList[x].length + "</td>";
+        row += "<td>" + clusterRemain(clusterList[x]) + "</td>";
+        row += "<td>" + adjacentScore(clusterList[x]) + "</td>";
         row += "<td>" + threatLevel(clusterList[x]) + "</td>";
         row += "<td>" + clusterList[x].toString() + "</td>";
         row += "</tr>";
@@ -660,10 +667,74 @@ function differenceCluster(clust1, clust2) {
 }
 
 
+// ADJACENT MATCH
+function adjacentMatch(cell) {
+    "use strict";
+    var cells, matches, value1, value2;
+    matches = [];
+    cells = adjacentCells(cell[0], cell[1]);
+    for (var i = 0; i < cells.length; i++) {
+        value1 = anyons[secs][cell[0]][cell[1]];
+        value2 = anyons[secs][cells[i][0]][cells[i][1]];
+        if ((value1 + value2) % d === 0) {
+            matches.push(cells[i]);
+        }
+    }
+    return matches;
+}
+
+
+// CLUSTER ADJACENCY SCORE
+function adjacentScore(cluster) {
+    "use strict";
+    var i, score;
+    score = 0;
+    for (i = 0; i < cluster.length; i++) {
+        score += adjacentCells(cluster[i][0], cluster[i][1]).length;
+    }
+    return score;
+}
+
+// CLUSTER VALID MATCHES (DIVIDE AND CONQUER)
+// when a cluster is split into many valid clusters by a collapse
+// rank cluster cells by number of adjacent cells
+function validMatches(cluster) {
+    "use strict";
+    var validCollapse, matches, testGrid;
+    validCollapse = [];
+
+    for (var i = 0; i < cluster.length; i++) {
+        // find cluster matches
+        matches = adjacentMatch(cluster[i]);
+        for (var i = 0; i < matches.length; i++) {
+            // simulate output of matches in cluster validity
+            if (matches[i] + cluster[i]){
+                // rank output
+            }
+        }
+    }
+    return validCollapse;
+}
+
+// CLUSTER SOLVE
+// minimal number of moves to solve the valid cluster
+function clusterSolve(cluster) {
+    "use strict";
+    var moves, i;
+    moves = [];
+    //for (i = 0; i < cluster.length; i += 1) {
+    //  cluster[i]
+    //}
+    // find matches that reduce the search space
+    return moves;
+}
+
+
 // FIND ALL CLUSTERS
+// find and assign contiguous clusters
 function findContiguousClusters() {
     "use strict";
-    var queue, cluster, clusterList, cell;
+    var queue, cluster, clusterList, cell, i, j;
     clusterList = [];
     queue = listCells();
     while (queue.length !== 0) {
@@ -672,14 +743,40 @@ function findContiguousClusters() {
         clusterList.push(cluster);
         queue = differenceCluster(queue, cluster);
     }
+    // assign cluster id to clusters
+    for (i = 0; i < clusterList.length; i += 1) {
+        cluster = clusterList[i];
+        for (j = 0; j < cluster.length; j += 1) {
+            cell = cluster[j];
+            clusters[cell[0]][cell[1]] = i;
+        }
+    }
+    displayGrid();
     return clusterList;
 }
 
 
+// INVALID CLUSTERS
+// combine invalid clusters to get valid total % d
+function invalidClusters() {
+    "use strict";
+    var i, invalidClusters;
+    invalidClusters = [];
+    for (i = 0; i < clusterList.length; i += 1) {
+        if (clusterRemain(clusterList[i]) !== 0){
+            invalidClusters.push(clusterList[i]);
+        }
+    }
+    return invalidClusters;
+}
+
+
 // SEGMENT CLUSTER
+// find cells with one adjacent cell that are similar to leafs in a graph
 function segmentCluster(cluster) {
     "use strict";
-    var x1, y1, x2, y2, i, cells;
+    var x1, y1, x2, y2, i, cells, suggestedMoves;
+    suggestedMoves = [];
     for (i = 0; i < cluster.length; i += 1) {
         x1 = cluster[i][0];
         y1 = cluster[i][1];
@@ -688,13 +785,14 @@ function segmentCluster(cluster) {
             x2 = cells[0][0];
             y2 = cells[0][1];
             if ((anyons[secs][x1][y1] + anyons[secs][x2][y2]) % d === 0) {
+                suggestedMoves.push([x1, y1], [x2, y2]);
+                highlightCells(suggestedMoves);
                 //console.log("Found match between [" + x1 + " , " + y1 + "] and [" + x2 + " , " + y2 + "]");
-                //highlightCells([[x1, y1], [x2, y2]]);
-                move(x1, y1, x2, y2);
             }
         }
     }
     displayGrid();
+    return suggestedMoves;
 }
 
 
@@ -811,6 +909,7 @@ $(document).ready(function() {
         puzzleNum = $("#puzzles").val();
         resetAnyons();
         loadAnyons(puzzles[puzzleNum]);
+        findContiguousClusters();
         displayGrid();
     });
     $("#save").click(function() {
