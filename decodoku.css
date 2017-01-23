@@ -4,7 +4,6 @@ html {
   background-color: black;
   color: white; }
   html h1 {
-    text-decoration: underline;
     text-align: center; }
 
 td, th {
@@ -19,7 +18,9 @@ td, th {
   margin-right: auto; }
   #grid td, #clusterGrid td {
     border: 1px solid white;
-    transform: rotate(45deg); }
+    /*transform: rotate(45deg) */ }
+    #grid td div, #clusterGrid td div {
+      /*transform: rotate(-45deg) */ }
   #grid .highlight, #clusterGrid .highlight {
     text-decoration: underline;
     font-style: italic; }
