@@ -8,6 +8,7 @@
 
 // Game mechanics
 // TODO: Implement game vs puzzle mode
+// TODO: Implement ability to generate clusters on differents grids that anyons
 // TODO: Implement cluster solving cost
 // TODO: Create a cluster and a cell class
 // TODO: Disable noise generation for puzzle solving
@@ -16,6 +17,7 @@
 // TODO: Implement an auto replay feature
 // Display
 // TODO: Prune null cluster to free css color classes
+// TODO: Include cell separation for calculation
 // TODO: redisplay using threeJS
 // AI
 // TODO: Tensor strength is distance to other cluster
@@ -36,7 +38,9 @@ var gridSize = 8;
 var secs = 0;
 var d = 10;
 var clusterNum = 0;
-var type = "Number";
+var output = "Number";
+var puzzleNum;
+var gametype = "Puzzle";
 var errorRate = 5;
 
 // INITIALIZE CLUSTERS & ANYONS ARRAY
@@ -47,6 +51,7 @@ var clusterList = [];
 
 // PUZZLES
 var puzzles = [
+    // 0-10
     "6003907404044709030003000700000004550000064037642865550000000582",
     "1200072807000300460030008700770005839300046000550440091206600134",
     "6601200008070191906000011540020805006891045643009954075008000005",
@@ -56,7 +61,29 @@ var puzzles = [
     "9530005368910057028960000300400907000371000028054003900560071631",
     "6608200008000082002419030081000701037640094236090060846600084045",
     "5820002054646005000000867373009000911900820009000914012800060037",
-    "2170835507040902030658006400502073195880010078237900016130071119"
+    "2170835507040902030658006400502073195880010078237900016130071119",
+    // 10-20
+    "2897060000137773353078731020290933370465008046900045701203913008",
+    "4938642061748062308241007002960306505120911459236022036940261551",
+    "3897942892831600146891378202055000238200001480015005661629455593",
+    "3897942892831600146891378202055000238200001480015005661629455593",
+    "3897942892831600146891378202055000238200001480015005661629455593",
+    "6230880028772828208054260320004605420490060006756428293391739076",
+    "8240080037240200394430869990673406137090370554601000500145645090",
+    "5024746859844852967867009542460020600010404855309164931160409078",
+    "3505383475087928100007853690580508109105021943660210292928707381",
+    "2764637718488573029200001609146050191340391283405643006444298006",
+    // 90-100
+    "6502210718024953785073509374300518033085623774804037000500730014",
+    "3210107032919391000591212886006024288260717309573300810300005782",
+    "3702019478088042150020463245000070020070386940369978000910020032",
+    "8085000939254631002000731930080773301020207417550635600988007701",
+    "9820336930282741376707351982050040249000795910002000389685500914",
+    "6306408274602037550750000242281025528218540056409911510037090900",
+    "7820242758008719800882826000200097362000027478127360000008680037",
+    "7991104610083820670391807389000706462063041026803370064275910288",
+    "8082190026467070138809330629210700015040860243976345020385087828",
+    "2000559026005673829290772872410600064836289263260010001982000019"
 ];
 
 
@@ -272,7 +299,7 @@ function countMoves() {
 // MOVES
 function move(x1, y1, x2, y2) {
     "use strict";
-    var oldCluster, x, y, newVal;
+    var oldCluster, x, y, newVal, highscore;
     countMoves();
 
     // cluster and anyons update
@@ -299,22 +326,34 @@ function move(x1, y1, x2, y2) {
     anyons[secs][x1][y1] = 0;
     clusters[x1][y1] = 0;
 
-    // check for spanners
-    if (checkSpanners() === true) {
-        alert("GAME OVER!");
-
-    } else {
-        // empty anyons array
+    // Puzzle mechanics
+    if (gametype === "Puzzle") {
         if (countAnyons() === 0) {
-            while ((secs % errorRate) > 0) {
-                countMoves();
+            alert("Congrats! Your score on puzzle " + $("#puzzles").val() + " is :" + secs);
+            highscore = localStorage.getItem("puzzle" + $("#puzzles").val());
+            if (secs < highscore || highscore === null) {
+                localStorage.setItem("puzzle" + puzzleNum, secs);
             }
         }
-        // generate noise
-        if (secs % errorRate === 0) {
-            generateNoise();
-        }
 
+    // Game mechanics
+    } else {
+        // check for spanners
+        if (checkSpanners() === true) {
+            alert("GAME OVER!");
+
+        } else {
+            // empty anyons array
+            if (countAnyons() === 0) {
+                while ((secs % errorRate) > 0) {
+                    countMoves();
+                }
+            }
+            // generate noise
+            if (secs % errorRate === 0) {
+                generateNoise();
+            }
+        }
     }
 }
 
@@ -373,7 +412,7 @@ function displayGrid() {
     var x, y;
     for (y = 0; y < gridSize; y += 1) {
         for (x = 0; x < gridSize; x += 1) {
-            switch (type) {
+            switch (output) {
             case "Number":
                 updateCell(x, y, anyons[secs][x][y]);
                 break;
@@ -649,6 +688,7 @@ function displayClusters() {
 // if cluster neighbour cancel each other remove them from the cluster
 // reduce search space to avoid expensive computation
 // remove cells that are sure
+// when there is a two neighbour cell try to add remaining clusters to see where its headed
 
 // DIFFERENCE BETWEEN CLUSTERS
 function differenceCluster(clust1, clust2) {
@@ -700,33 +740,30 @@ function adjacentScore(cluster) {
 // rank cluster cells by number of adjacent cells
 function validMatches(cluster) {
     "use strict";
-    var validCollapse, matches, testGrid;
+    var validCollapse, matches, testGrid, x, y, x1, y1, x2, y2, total;
     validCollapse = [];
-
+    total = clusterRemain(cluster);
+    // copy anyons grid
+    for (x = 0; x < gridSize; x += 1) {
+        testGrid[x] = [];
+        for (y = 0; y < gridSize; y += 1) {
+            testGrid[x][y] = anyons[secs][x][y];
+        }
+    }
+    // find valid matches
     for (var i = 0; i < cluster.length; i++) {
-        // find cluster matches
         matches = adjacentMatch(cluster[i]);
-        for (var i = 0; i < matches.length; i++) {
-            // simulate output of matches in cluster validity
-            if (matches[i] + cluster[i]){
-                // rank output
-            }
+        for (var j = 0; j < matches.length; j++) {
+            x1 = cluster[i][0];
+            y1 = cluster[i][1];
+            x2 = matches[j][0];
+            y2 = matches[j][1];
+            testGrid[x1][y1] = 0;
+            testGrid[x2][y2] = 0;
+            // Watch remains of new clusters and check validity
         }
     }
     return validCollapse;
-}
-
-// CLUSTER SOLVE
-// minimal number of moves to solve the valid cluster
-function clusterSolve(cluster) {
-    "use strict";
-    var moves, i;
-    moves = [];
-    //for (i = 0; i < cluster.length; i += 1) {
-    //  cluster[i]
-    //}
-    // find matches that reduce the search space
-    return moves;
 }
 
 
@@ -758,16 +795,29 @@ function findContiguousClusters() {
 
 // INVALID CLUSTERS
 // combine invalid clusters to get valid total % d
+// check distance between invalid clusters
 function invalidClusters() {
     "use strict";
-    var i, invalidClusters;
+    var i, j, invalidClusters, val1, val2, clusterMatches, clusterList;
     invalidClusters = [];
+    clusterMatches = [];
+    clusterList = findContiguousClusters();
     for (i = 0; i < clusterList.length; i += 1) {
-        if (clusterRemain(clusterList[i]) !== 0){
+        if (clusterRemain(clusterList[i]) !== 0) {
             invalidClusters.push(clusterList[i]);
         }
     }
-    return invalidClusters;
+    // match invalid clusters with closest matching cluster
+    for (i = 0; i < invalidClusters.length; i += 1) {
+        for (j = 0; j < invalidClusters.length; j += 1) {
+            val1 = clusterRemain(invalidClusters[i]);
+            val2 = clusterRemain(invalidClusters[j]);
+            if ((val1 + val2) % d === 0 && i !== j) {
+                clusterMatches.push(invalidClusters[i], invalidClusters[j]);
+            }
+        }
+    }
+    return clusterMatches;
 }
 
 
@@ -786,6 +836,7 @@ function segmentCluster(cluster) {
             y2 = cells[0][1];
             if ((anyons[secs][x1][y1] + anyons[secs][x2][y2]) % d === 0) {
                 suggestedMoves.push([x1, y1], [x2, y2]);
+                move(x1, y1, x2, y2);
                 highlightCells(suggestedMoves);
                 //console.log("Found match between [" + x1 + " , " + y1 + "] and [" + x2 + " , " + y2 + "]");
             }
@@ -847,7 +898,6 @@ $(document).ready(function() {
     "use strict";
     var dragging, fromX, fromY, x, y, cluster, cells, puzzleNum, i;
     initGrid();
-    //newGame();
     resetAnyons();
     loadAnyons(puzzles[0]);
     displayGrid();
@@ -907,6 +957,7 @@ $(document).ready(function() {
     // Controls
     $("#load").click(function() {
         puzzleNum = $("#puzzles").val();
+        secs = 0;
         resetAnyons();
         loadAnyons(puzzles[puzzleNum]);
         findContiguousClusters();
@@ -933,8 +984,12 @@ $(document).ready(function() {
     $("#newgame").click(function() {
         newGame();
     });
+    $("input[name='output']").change(function() {
+        output = $(this).val();
+        displayGrid();
+    });
     $("input[name='gametype']").change(function() {
-        type = $(this).val();
+        gametype = $(this).val();
         displayGrid();
     });
 });
