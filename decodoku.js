@@ -467,6 +467,62 @@ function gameCheck() {
     }
 }
 
+//------------------------DIAMOND GRID------------------------------------------
+// INIT DIAMOND GRID
+function initDiamondGrid() {
+    "use strict";
+    var x, y, row, rowData, cell;
+    // create DOM
+    for (y = 0; y < gridSize * 2 - 1; y += 1) {
+        row = $("<tr></tr>");
+        for (x = 0; x < gridSize * 2 - 1; x += 1) {
+            rowData = $("<td></td>");
+            row.append(rowData);
+        }
+        $("#diamondGrid tbody").append(row);
+    }
+    // assign value
+    for (x = 0; x < gridSize * 2 - 1; x += 1) {
+        for (y = 0; y < gridSize * 2 - 1; y += 1) {
+            if (x % 2 === 0 && y % 2 === 0) {
+                cell = $("#diamondGrid tbody")[0].rows[x].cells[y];
+                $(cell).addClass("syndrome");
+                $(cell).addClass("group" + clusters[x/2][y/2]);
+                if (anyons[secs][x/2][y/2] !== 0) {
+                    $(cell).html(anyons[secs][x/2][y/2]);
+                }
+            } else if (x % 2 === 0 && y % 2 === 1) {
+                cell = $("#diamondGrid tbody")[0].rows[x].cells[y];
+                $(cell).addClass("link");
+                $(cell).html("|");
+            } else if (x % 2 === 1 && y % 2 === 0) {
+                cell = $("#diamondGrid tbody")[0].rows[x].cells[y];
+                $(cell).addClass("link");
+                $(cell).html("-");
+            } else {
+                cell = $("#diamondGrid tbody")[0].rows[x].cells[y];
+                $(cell).addClass("mid");
+            }
+        }
+    }
+}
+
+
+// CELL TYPE
+function cellType(coord) {
+    "use strict";
+    var x, y;
+    x = coord[0];
+    y = coord[1];
+    if ((x % 2) === 0 && (y % 2) === 0) {
+        return "syndrome";
+    } else if (x % 2 === 0 && y % 2 === 1 || x % 2 === 1 && y % 2 === 0) {
+        return "link";
+    } else {
+        return "mid";
+    }
+}
+
 
 //------------------------DISPLAY-----------------------------------------------
 // INIT GRID
@@ -762,7 +818,7 @@ function adjacentMatch(cell) {
     var cells, matches, value1, value2;
     matches = [];
     cells = adjacentCells(cell);
-    for (var i = 0; i < cells.length; i++) {
+    for (var i = 0; i < cells.length; i += 1) {
         value1 = anyons[secs][cell[0]][cell[1]];
         value2 = anyons[secs][cells[i][0]][cells[i][1]];
         if ((value1 + value2) % d === 0) {
@@ -778,7 +834,7 @@ function adjacentScore(cluster) {
     "use strict";
     var i, score;
     score = 0;
-    for (i = 0; i < cluster.length; i++) {
+    for (i = 0; i < cluster.length; i += 1) {
         score += adjacentCells(cluster[i]).length;
     }
     return score;
@@ -801,9 +857,9 @@ function validMatches(cluster) {
         }
     }
     // find valid matches
-    for (var i = 0; i < cluster.length; i++) {
+    for (var i = 0; i < cluster.length; i += 1) {
         matches = adjacentMatch(cluster[i]);
-        for (var j = 0; j < matches.length; j++) {
+        for (var j = 0; j < matches.length; j += 1) {
             x1 = cluster[i][0];
             y1 = cluster[i][1];
             x2 = matches[j][0];
@@ -930,12 +986,13 @@ function newGame() {
 
 $(document).ready(function() {
     "use strict";
-    var dragging, x1, y1, x, y, cluster, puzzleNum, i;
+    var dragging, x1, y1, x, y, cluster, puzzleNum, i, cell1, cell2, cell3, cell4, cell, $cell, total;
     initGrid();
     resetAnyons();
     loadAnyons(puzzles[0]);
     displayGrid();
     displayClusters();
+    initDiamondGrid();
 
 
     // Populate puzzle select
@@ -983,6 +1040,46 @@ $(document).ready(function() {
             segmentCluster(cluster);
         }
         highlightCells(cluster);
+    });
+
+    // Diamond grid debug
+    $("#diamondGrid tbody td").hover(function() {
+        y = parseInt($(this).index(), 10);
+        x = parseInt($(this).parent().index(), 10);
+        $("#coord").html("[" + x + ", " + y + "]");
+        cellType([x,y]);
+    });
+
+    // Diamond grid link click
+    $("#diamondGrid tbody td").click(function() {
+        y = parseInt($(this).index(), 10);
+        x = parseInt($(this).parent().index(), 10);
+        // vertical  or horizontal link
+        if (cellType([x, y]) === "link") {
+            if (x % 2 === 0){
+                cell1 = [x, y - 1];
+                cell2 = [x, y + 1];
+            } else {
+                cell1 = [x - 1, y];
+                cell2 = [x + 1, y];
+            }
+            cell = $("#diamondGrid tbody")[0].rows[x].cells[y];
+            $cell = $(cell);
+            $cell.toggleClass("linked");
+        // mid cell cluster
+        } else if (cellType([x, y]) === "mid") {
+            cell1 = [x + 1, y + 1];
+            cell2 = [x + 1, y - 1];
+            cell3 = [x - 1, y + 1];
+            cell4 = [x - 1, y - 1];
+            total = anyons[secs][cell1[0]/2][cell1[1]/2]
+                  + anyons[secs][cell2[0]/2][cell2[1]/2]
+                  + anyons[secs][cell3[0]/2][cell3[1]/2]
+                  + anyons[secs][cell4[0]/2][cell4[1]/2];
+            cell = $("#diamondGrid tbody")[0].rows[x].cells[y];
+            $cell = $(cell);
+            $cell.html(total % d);
+        }
     });
 
     // Controls

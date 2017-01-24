@@ -12,74 +12,107 @@ td, th {
   text-align: center;
   font-size: 20px; }
 
+/* DIAMOND GRID */
+#diamondGrid td {
+  border: 1px solid white;
+  width: 20px;
+  height: 20px;
+  font-size: 14px; }
+#diamondGrid .syndrome {
+  color: white; }
+#diamondGrid .link {
+  background-color: #4d4d4d; }
+#diamondGrid .mid {
+  background-color: black; }
+#diamondGrid .linked {
+  background-color: green;
+  transform: rotate(90deg); }
+
 /* GRID */
-#grid, #clusterGrid {
-  margin-left: auto;
-  margin-right: auto; }
-  #grid td, #clusterGrid td {
-    border: 1px solid white;
-    /*transform: rotate(45deg) */ }
-    #grid td div, #clusterGrid td div {
-      /*transform: rotate(-45deg) */ }
-  #grid .highlight, #clusterGrid .highlight {
-    text-decoration: underline;
-    font-style: italic; }
-  #grid .group0, #clusterGrid .group0 {
-    background-color: maroon; }
-  #grid .group1, #clusterGrid .group1 {
-    background-color: red; }
-  #grid .group2, #clusterGrid .group2 {
-    background-color: orange; }
-  #grid .group3, #clusterGrid .group3 {
-    background-color: navy; }
-  #grid .group4, #clusterGrid .group4 {
-    background-color: olive; }
-  #grid .group5, #clusterGrid .group5 {
-    background-color: green; }
-  #grid .group6, #clusterGrid .group6 {
-    background-color: purple; }
-  #grid .group7, #clusterGrid .group7 {
-    background-color: magenta; }
-  #grid .group8, #clusterGrid .group8 {
-    background-color: lime; }
-  #grid .group9, #clusterGrid .group9 {
-    background-color: teal; }
-  #grid .group10, #clusterGrid .group10 {
-    background-color: cyan; }
-  #grid .group11, #clusterGrid .group11 {
-    background-color: blue; }
-  #grid .group12, #clusterGrid .group12 {
-    background-color: orange;
-    font-style: italic; }
-  #grid .group13, #clusterGrid .group13 {
-    background-color: navy;
-    font-style: italic; }
-  #grid .group14, #clusterGrid .group14 {
-    background-color: olive;
-    font-style: italic; }
-  #grid .group15, #clusterGrid .group15 {
-    background-color: green;
-    font-style: italic; }
-  #grid .group16, #clusterGrid .group16 {
-    background-color: purple;
-    font-style: italic; }
-  #grid .group17, #clusterGrid .group17 {
-    background-color: magenta;
-    font-style: italic; }
-  #grid .group18, #clusterGrid .group18 {
-    background-color: lime;
-    font-style: italic; }
-  #grid .group19, #clusterGrid .group19 {
-    background-color: teal;
-    font-style: italic; }
-  #grid .group20, #clusterGrid .group20 {
-    background-color: cyan;
-    font-style: italic; }
-  #grid .group21, #clusterGrid .group21 {
-    background-color: blue;
-    font-style: italic; }
-  #grid .selected, #clusterGrid .selected {
-    font-size: 16px; }
+#grid td, #clusterGrid td {
+  border: 1px solid white; }
+#grid .highlight, #clusterGrid .highlight {
+  text-decoration: underline;
+  font-style: italic; }
+#grid .selected, #clusterGrid .selected {
+  font-size: 16px; }
+
+/* COLORS */
+.group0 {
+  background-color: maroon; }
+
+.group1 {
+  background-color: red; }
+
+.group2 {
+  background-color: orange; }
+
+.group3 {
+  background-color: navy; }
+
+.group4 {
+  background-color: olive; }
+
+.group5 {
+  background-color: green; }
+
+.group6 {
+  background-color: purple; }
+
+.group7 {
+  background-color: magenta; }
+
+.group8 {
+  background-color: lime; }
+
+.group9 {
+  background-color: teal; }
+
+.group10 {
+  background-color: cyan; }
+
+.group11 {
+  background-color: blue; }
+
+.group12 {
+  background-color: orange;
+  font-style: italic; }
+
+.group13 {
+  background-color: navy;
+  font-style: italic; }
+
+.group14 {
+  background-color: olive;
+  font-style: italic; }
+
+.group15 {
+  background-color: green;
+  font-style: italic; }
+
+.group16 {
+  background-color: purple;
+  font-style: italic; }
+
+.group17 {
+  background-color: magenta;
+  font-style: italic; }
+
+.group18 {
+  background-color: lime;
+  font-style: italic; }
+
+.group19 {
+  background-color: teal;
+  font-style: italic; }
+
+.group20 {
+  background-color: cyan;
+  font-style: italic; }
+
+.group21 {
+  background-color: blue;
+  font-style: italic; }
 
 /* CONTROLS */
 #controls {
