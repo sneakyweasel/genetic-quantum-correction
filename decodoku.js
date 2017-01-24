@@ -35,7 +35,6 @@ var gridSize = 8;
 var d = 10;
 var secs = 0;
 var errorRate = 5;
-var puzzleNum;
 var output = "number";
 var gametype = "puzzle";
 
@@ -43,7 +42,6 @@ var gametype = "puzzle";
 var anyons = [];
 var computeGrid = [];
 var clusters = [];
-var clusterList = [];
 
 // PUZZLES
 var puzzles = [
@@ -210,6 +208,7 @@ function saveAnyons() {
             anyonsString += anyons[secs][y][x];
         }
     }
+    console.log(anyonsString);
     return anyonsString;
 }
 
@@ -400,7 +399,7 @@ function countMoves() {
 // MOVES
 function move(coord1, coord2) {
     "use strict";
-    var oldCluster, x, y, newVal, highscore, x1, y1, x2, y2;
+    var oldCluster, x, y, newVal, x1, y1, x2, y2;
     x1 = coord1[0];
     y1 = coord1[1];
     x2 = coord2[0];
@@ -433,32 +432,36 @@ function move(coord1, coord2) {
         // remove it from the initial position
         anyons[secs][x1][y1] = 0;
         clusters[x1][y1] = 0;
+    }
+
+    // check game status
+    gameCheck();
+}
 
 
-        // MOVE THIS
-        // Puzzle mechanics
-        if (gametype === "puzzle") {
-            if (countAnyons() === 0) {
-                alert("Congrats! Your score on puzzle " + $("#puzzles").val() + " is :" + secs);
-            }
-
-            // Game mechanics
+// GAME CHECK LOGIC
+function gameCheck() {
+    "use strict";
+    // puzzle logic
+    if (gametype === "puzzle") {
+        if (countAnyons() === 0) {
+            alert("Congrats! Your score on puzzle " + $("#puzzles").val() + " is :" + secs);
+        }
+    // game logic
+    } else if (gametype === "game") {
+        // game over
+        if (checkSpanners() === true) {
+            alert("GAME OVER!");
         } else {
-            // check for spanners
-            if (checkSpanners() === true) {
-                alert("GAME OVER!");
-
-            } else {
-                // empty anyons array
-                if (countAnyons() === 0) {
-                    while ((secs % errorRate) > 0) {
-                        countMoves();
-                    }
+            // stuck
+            if (countAnyons() === 0) {
+                while ((secs % errorRate) > 0) {
+                    countMoves();
                 }
-                // generate noise
-                if (secs % errorRate === 0) {
-                    generateNoise();
-                }
+            }
+            // generate noise
+            if (secs % errorRate === 0) {
+                generateNoise();
             }
         }
     }
@@ -499,7 +502,7 @@ function resetGrid() {
 // UPDATE CELL
 function updateCell(coord, value) {
     "use strict";
-    var cell, $cell, x, y, ids;
+    var cell, $cell, x, y;
     x = coord[0];
     y = coord[1];
     cell = $("#grid tbody")[0].rows[x].cells[y];
@@ -552,26 +555,6 @@ function highlightCells(cells) {
         cell = $("#grid tbody")[0].rows[x].cells[y];
         $cell = $(cell);
         $cell.toggleClass("highlight");
-    }
-}
-
-
-// DISPLAY CLUSTER GRID
-function displayClusterGrid() {
-    "use strict";
-    var x, y, row, rowData;
-    $("#clusterGrid tbody").empty();
-    for (x = 0; x < gridSize; x += 1) {
-        row = $("<tr></tr>");
-        for (y = 0; y < gridSize; y += 1) {
-            if (clusters[x][y] === 0) {
-                rowData = $("<td></td>");
-            } else {
-                rowData = $("<td>" + clusters[x][y] + "</td>");
-            }
-            row.append(rowData);
-        }
-        $("#clusterGrid tbody").append(row);
     }
 }
 
@@ -710,56 +693,6 @@ function shortestDistance(clust1, clust2) {
 }
 
 
-// ORDERED CLUSTER LIST
-function generateClusterList() {
-    "use strict";
-    var x, y, indexes, i;
-    clusterList = [];
-    indexes = [];
-    // Get cluster indexes
-    for (x = 0; x < gridSize; x += 1) {
-        for (y = 0; y < gridSize; y += 1) {
-            if (clusters[x][y] !== 0) {
-                indexes.push(clusters[x][y]);
-            }
-        }
-    }
-    indexes = _.uniq(indexes);
-    // Populate clusters
-    for (i = 0; i < indexes.length; i += 1) {
-        clusterList[i] = [];
-        for (x = 0; x < gridSize; x += 1) {
-            for (y = 0; y < gridSize; y += 1) {
-                if (clusters[x][y] === indexes[i]) {
-                    clusterList[i].push([x, y]);
-                }
-            }
-        }
-    }
-    clusterList.sort(function(a, b) {
-        return b.length - a.length;
-    });
-    return clusterList;
-}
-
-
-// COMPARE HISTORICAL ANYONS ARRAY
-function anyonsDifference() {
-    "use strict";
-    var diffGrid, x, y;
-    diffGrid = [];
-    for (x = 0; x < gridSize; x += 1) {
-        for (y = 0; y < gridSize; y += 1) {
-            if (anyons[secs][x][y] !== anyons[secs - 1][x][y]) {
-                diffGrid.push([x, y]);
-            }
-        }
-    }
-    //console.log(diffGrid);
-    return diffGrid;
-}
-
-
 //------------------------CONTROLS----------------------------------------------
 // CLUSTER THREAT LEVEL
 function threatLevel(cluster) {
@@ -857,9 +790,9 @@ function adjacentScore(cluster) {
 // rank cluster cells by number of adjacent cells
 function validMatches(cluster) {
     "use strict";
-    var validCollapse, matches, testGrid, x, y, x1, y1, x2, y2, total;
+    var validCollapse, matches, testGrid, x, y, x1, y1, x2, y2;
     validCollapse = [];
-    total = clusterRemain(cluster);
+
     // copy anyons grid
     for (x = 0; x < gridSize; x += 1) {
         testGrid[x] = [];
@@ -997,7 +930,7 @@ function newGame() {
 
 $(document).ready(function() {
     "use strict";
-    var dragging, x1, y1, x, y, cluster, cells, puzzleNum, i;
+    var dragging, x1, y1, x, y, cluster, puzzleNum, i;
     initGrid();
     resetAnyons();
     loadAnyons(puzzles[0]);
@@ -1015,6 +948,7 @@ $(document).ready(function() {
     $("#grid tbody td").click(function() {
         y = parseInt($(this).index(), 10);
         x = parseInt($(this).parent().index(), 10);
+        $("#selected").html("[" + x + ", " + y + "] " + dragging);
         // Start move
         if (dragging === false) {
             x1 = x;
@@ -1070,10 +1004,6 @@ $(document).ready(function() {
             $("#secs").html(secs);
             displayGrid();
         }
-    });
-    $("#diff").click(function() {
-        cells = anyonsDifference();
-        highlightCells(cells);
     });
     $("#error").click(function() {
         generateError();
