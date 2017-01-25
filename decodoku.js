@@ -6,20 +6,14 @@
 // OUTPUT: A list of 10 numbers describing grid movements
 
 // Game mechanics
-// TODO: Separate game logic from move function
-// TODO: Fix unselected jquery click values
 // TODO: Implement ability to find clusters on differents grids that anyons
 // TODO: Implement cluster solving cost
 // TODO: Create a cluster and a cell class
-// Display
-// TODO: Include diamond shape for calculation
-// TODO: Reformulate problem to be genetic algorithm compatible (diamond gate)
 // AI
 // TODO: Tensor strength is distance to other compatible cluster
 // TODO: Implement divide and conquer strategy
 // TODO: Consider puzzle as a collapsing graph
 // TODO: Implement a js eval textarea field where you can test your AI
-// TODO: Score grid on the number of adjacent cells
 // History
 // TODO: Create a highscore chart
 // TODO: Improve save function
@@ -35,7 +29,6 @@ var gridSize = 8;
 var d = 10;
 var secs = 0;
 var errorRate = 5;
-var output = "number";
 var gametype = "puzzle";
 
 // INITIALIZE CLUSTERS & ANYONS ARRAY
@@ -162,6 +155,97 @@ var puzzles = [
 ];
 
 
+//------------------------CLASSES-----------------------------------------------
+class Cell {
+    constructor(grid, x, y, value) {
+        this.grid = grid;
+        this.x = x;
+        this.y = y;
+        this.value = value;
+    }
+    getCoord() {
+        return [this.x, this.y];
+    }
+}
+
+class Syndrome extends Cell {
+    getAdjacentCells() {
+        var cells;
+        cells = [];
+        // get up
+        if (this.x > 0) {
+            cells.push([this.x - 1, this.y]);
+        }
+        // get down
+        if (this.x < this.grid.size - 1) {
+            cells.push([this.x + 1, this.y]);
+        }
+        // get left
+        if (this.y > 0) {
+            cells.push([this.x, this.y - 1]);
+        }
+        // get right
+        if (this.y < this.grid.size - 1) {
+            cells.push([this.x, this.y + 1]);
+        }
+        return cells;
+    }
+}
+
+class Link extends Cell {
+
+}
+
+class Middle extends Cell {
+
+}
+
+class Grid {
+    constructor(size) {
+        this.size = size;
+        this.grid = [];
+        var x, y, row, rowData;
+        $("#grid tbody").empty();
+        for (x = 0; x < this.size * 2 - 1; x += 1) {
+            this.grid[x] = [];
+            row = $("<tr></tr>");
+            for (y = 0; y < this.size * 2 - 1; y += 1) {
+                this.grid[x][y] = new Cell(x, y, 0, 0);
+                rowData = $("<td></td>");
+                row.append(rowData);
+            }
+            $("#grid tbody").append(row);
+        }
+    }
+    display() {
+        var x, y, cell;
+        for (x = 0; x < this.size * 2 - 1; x += 1) {
+            for (y = 0; y < this.size * 2 - 1; y += 1) {
+                if (x % 2 === 0 && y % 2 === 0) {
+                    cell = $("#grid tbody")[0].rows[x].cells[y];
+                    $(cell).addClass("syndrome");
+                    if (anyons[secs][x/2][y/2] !== 0) {
+                        $(cell).html(anyons[secs][x/2][y/2]);
+                        $(cell).addClass("group" + clusters[x/2][y/2]);
+                    }
+                } else if (x % 2 === 0 && y % 2 === 1) {
+                    cell = $("#grid tbody")[0].rows[x].cells[y];
+                    $(cell).addClass("link");
+                    $(cell).html("|");
+                } else if (x % 2 === 1 && y % 2 === 0) {
+                    cell = $("#grid tbody")[0].rows[x].cells[y];
+                    $(cell).addClass("link");
+                    $(cell).html("-");
+                } else {
+                    cell = $("#grid tbody")[0].rows[x].cells[y];
+                    $(cell).addClass("mid");
+                }
+            }
+        }
+    }
+}
+
+
 //------------------------GAME LOGIC--------------------------------------------
 // RESET CLUSTER GRID AND ANYONS
 function resetAnyons() {
@@ -238,7 +322,6 @@ function nextFreeClusterId() {
     if (clusterIds.length === 0) {
         clusterIds.push(0);
     }
-    console.log(clusterIds);
     i = 0;
     while (_.contains(clusterIds, i) === true) {
         i += 1;
@@ -467,11 +550,24 @@ function gameCheck() {
     }
 }
 
+
+// NEW GAME
+function newGame() {
+    "use strict";
+    secs = 0;
+    resetAnyons();
+    generateNoise();
+    if (checkSpanners()) {
+        newGame();
+    }
+}
+
+
 //------------------------DIAMOND GRID------------------------------------------
 // INIT DIAMOND GRID
-function initDiamondGrid() {
+function initGrid() {
     "use strict";
-    var x, y, row, rowData, cell;
+    var x, y, row, rowData;
     // create DOM
     for (y = 0; y < gridSize * 2 - 1; y += 1) {
         row = $("<tr></tr>");
@@ -479,29 +575,52 @@ function initDiamondGrid() {
             rowData = $("<td></td>");
             row.append(rowData);
         }
-        $("#diamondGrid tbody").append(row);
+        $("#grid tbody").append(row);
     }
-    // assign value
+}
+
+
+// RESET DIAMOND GRID
+function resetGrid() {
+    "use strict";
+    var x, y, cell, $cell;
+    // create DOM
+    for (y = 0; y < gridSize * 2 - 1; y += 1) {
+        for (x = 0; x < gridSize * 2 - 1; x += 1) {
+            cell = $("#grid tbody")[0].rows[x].cells[y];
+            $cell = $(cell);
+            $cell.removeClass();
+            $cell.html("");
+        }
+    }
+}
+
+
+// DISPLAY GRID
+function displayGrid() {
+    "use strict";
+    var x, y, cell;
     for (x = 0; x < gridSize * 2 - 1; x += 1) {
         for (y = 0; y < gridSize * 2 - 1; y += 1) {
             if (x % 2 === 0 && y % 2 === 0) {
-                cell = $("#diamondGrid tbody")[0].rows[x].cells[y];
+                cell = $("#grid tbody")[0].rows[x].cells[y];
                 $(cell).addClass("syndrome");
-                $(cell).addClass("group" + clusters[x/2][y/2]);
                 if (anyons[secs][x/2][y/2] !== 0) {
                     $(cell).html(anyons[secs][x/2][y/2]);
+                    $(cell).addClass("group" + clusters[x/2][y/2]);
                 }
             } else if (x % 2 === 0 && y % 2 === 1) {
-                cell = $("#diamondGrid tbody")[0].rows[x].cells[y];
+                cell = $("#grid tbody")[0].rows[x].cells[y];
                 $(cell).addClass("link");
                 $(cell).html("|");
             } else if (x % 2 === 1 && y % 2 === 0) {
-                cell = $("#diamondGrid tbody")[0].rows[x].cells[y];
+                cell = $("#grid tbody")[0].rows[x].cells[y];
                 $(cell).addClass("link");
                 $(cell).html("-");
             } else {
-                cell = $("#diamondGrid tbody")[0].rows[x].cells[y];
+                cell = $("#grid tbody")[0].rows[x].cells[y];
                 $(cell).addClass("mid");
+                //$(cell).html("+");
             }
         }
     }
@@ -524,96 +643,133 @@ function cellType(coord) {
 }
 
 
-//------------------------DISPLAY-----------------------------------------------
-// INIT GRID
-function initGrid() {
+// GET LINK STATUS
+function checkLink(coord1, coord2) {
     "use strict";
-    var x, y, row, rowData;
-    for (y = 0; y < gridSize; y += 1) {
-        row = $("<tr></tr>");
-        for (x = 0; x < gridSize; x += 1) {
-            rowData = $("<td></td>");
-            row.append(rowData);
-        }
-        $("#grid tbody").append(row);
+    var x, y, x1, y1, x2, y2,  cell;
+    x1 = coord1[0] * 2;
+    y1 = coord1[1] * 2;
+    x2 = coord2[0] * 2;
+    y2 = coord2[1] * 2;
+    if (x1 === x2) {
+        x = x1;
+        y = _.min([y1, y2]) + 1;
+    } else {
+        x = _.min([x1, x2]) + 1;
+        y = y1;
     }
+    cell = $("#grid tbody")[0].rows[x].cells[y];
+    return $(cell).hasClass("linked");
 }
 
 
-// RESET GRID
-function resetGrid() {
+// GET ADJACENT LINKS
+function adjacentLinks(coord) {
     "use strict";
-    var x, y, cell, $cell;
-    for (x = 0; x < gridSize; x += 1) {
-        for (y = 0; y < gridSize; y += 1) {
-            cell = $("#grid tbody")[0].rows[x].cells[y];
-            $cell = $(cell);
-            $cell.html("<div></div>");
-            $cell.removeClass();
-        }
-    }
-}
-
-
-// UPDATE CELL
-function updateCell(coord, value) {
-    "use strict";
-    var cell, $cell, x, y;
+    var links, x, y;
     x = coord[0];
     y = coord[1];
-    cell = $("#grid tbody")[0].rows[x].cells[y];
-    $cell = $(cell);
-    if (value === 0) {
-        $cell.html("<div></div>");
-        $cell.removeClass();
-    } else {
-        $cell.html("<div>" + value + "</div>");
-        $cell.removeClass();
-        $cell.addClass("group" + clusters[x][y]);
+    links = [];
+    // get up
+    if (x > 0 && checkLink([x, y], [x - 1, y]) === true) {
+        links.push([x - 1, y]);
     }
+    // get down
+    if (x < gridSize - 1 && checkLink([x, y], [x + 1, y]) === true) {
+        links.push([x + 1, y]);
+    }
+    // get left
+    if (y > 0 && checkLink([x, y], [x, y - 1]) === true) {
+        links.push([x, y - 1]);
+    }
+    // get right
+    if (y < gridSize - 1 && checkLink([x, y], [x, y + 1]) === true) {
+        links.push([x, y + 1]);
+    }
+    return links;
 }
 
 
-// DRAW GRID
-function displayGrid() {
+// LINKED CLUSTER
+function linkedCluster(coord1, coord2) {
     "use strict";
-    var x, y, coord;
-    for (y = 0; y < gridSize; y += 1) {
-        for (x = 0; x < gridSize; x += 1) {
-            coord = [x, y];
-            switch (output) {
-            case "number":
-                updateCell(coord, anyons[secs][x][y]);
-                break;
-            case "phi":
-                if (anyons[secs][x][y] === 5) {
-                    updateCell(coord, "V");
-                } else {
-                    updateCell(coord, "#");
-                }
-                break;
-            case "cluster":
-                updateCell(coord, clusters[x][y]);
-                break;
+    var cluster, queue, current, cells, i, x1, y1, x2, y2;
+    cluster = [];
+    cells = [];
+    x1 = coord1[0];
+    y1 = coord1[1];
+    x2 = coord2[0];
+    y2 = coord2[1];
+    queue = [[x1, y1], [x2, y2]];
+    // until queue is empty
+    while (queue.length > 0) {
+        // get last item in queue
+        current = queue.pop();
+        // save it in painted cluster
+        cluster.push(current);
+        // get adjacent cells
+        cells = adjacentLinks(current);
+        for (i = 0; i < cells.length; i += 1) {
+            if (containsCoords(cells[i], queue) === false && containsCoords(cells[i], cluster) === false) {
+                queue.push(cells[i]);
             }
         }
     }
+    return cluster;
 }
 
 
-// HIGHLIGHT CELLS
-function highlightCells(cells) {
-    "use strict";
-    var i, x, y, cell, $cell;
-    for (i = 0; i < cells.length; i += 1) {
-        x = cells[i][0];
-        y = cells[i][1];
-        cell = $("#grid tbody")[0].rows[x].cells[y];
-        $cell = $(cell);
-        $cell.toggleClass("highlight");
+// CLUSTER SUM
+function clusterSum(cluster) {
+    var total, i;
+    total = 0;
+    for (i = 0; i < cluster.length; i += 1) {
+        total += anyons[secs][cluster[i][0]][cluster[i][1]];
     }
+    return total % d;
 }
 
+// DISPLAY LINK
+function toggleLink(coord) {
+    "use strict";
+    var x, y, cell, $cell, cell1, cell2, clusterNum, total, x1, y1, x2, y2, i, cluster;
+    x = coord[0];
+    y = coord[1];
+    // get cells
+    if (x % 2 === 0){
+        cell1 = [x, y - 1];
+        cell2 = [x, y + 1];
+    } else {
+        cell1 = [x - 1, y];
+        cell2 = [x + 1, y];
+    }
+    // anyons coords
+    x1 = cell1[0] / 2;
+    y1 = cell1[1] / 2;
+    x2 = cell2[0] / 2;
+    y2 = cell2[1] / 2;
+    // create a new cluster id
+    clusterNum = nextFreeClusterId();
+    // linked cluster
+    cluster = linkedCluster([x1, y1],[x2, y2]);
+    total = clusterSum(cluster);
+    console.log("CLUSTER" + JSON.stringify(cluster) + " - TOTAL: " + total);
+    // display linked cluster
+    for (i = 0; i < cluster.length; i += 1) {
+        cell = $("#grid tbody")[0].rows[cluster[i][0]*2].cells[cluster[i][1]*2];
+        clusters[cluster[i][0]][cluster[i][1]] = clusterNum;
+        $cell = $(cell);
+        $cell.removeClass();
+        $cell.html(total);
+        $cell.toggleClass("group" + clusterNum);
+    }
+    // toggle linked
+    cell = $("#grid tbody")[0].rows[x].cells[y];
+    $cell = $(cell);
+    $cell.toggleClass("linked");
+
+    //displayGrid();
+}
 
 //------------------------HELPERS-----------------------------------------------
 //LIST ALL CELLS
@@ -894,7 +1050,6 @@ function findContiguousClusters() {
             clusters[cell[0]][cell[1]] = i;
         }
     }
-    displayGrid();
     return clusterList;
 }
 
@@ -946,7 +1101,6 @@ function segmentCluster(cluster) {
             if ((anyons[secs][x1][y1] + anyons[secs][x2][y2]) % d === 0) {
                 suggestedMoves.push([x1, y1], [x2, y2]);
                 move(cluster[i], cells[0]);
-                highlightCells(suggestedMoves);
             }
         }
     }
@@ -963,109 +1117,44 @@ function segmentCluster(cluster) {
         move(edgeCells[0], centerCell);
         move(edgeCells[1], centerCell);
     }
-
-    displayGrid();
     return suggestedMoves;
 }
 
 
 //------------------------MAIN--------------------------------------------------
-// NEW GAME
-function newGame() {
-    "use strict";
-    secs = 0;
-    resetAnyons();
-    resetGrid();
-    generateNoise();
-    if (checkSpanners()) {
-        newGame();
-    }
-    displayGrid();
-}
-
-
 $(document).ready(function() {
     "use strict";
-    var dragging, x1, y1, x, y, cluster, puzzleNum, i, cell1, cell2, cell3, cell4, cell, $cell, total;
+    var x, y, puzzleNum, i, cell1, cell2, cell3, cell4, cell, $cell, total, randomPuzzle;
     initGrid();
     resetAnyons();
-    loadAnyons(puzzles[0]);
-    displayGrid();
+    randomPuzzle = Math.floor(Math.random() * puzzles.length);
+    loadAnyons(puzzles[randomPuzzle]);
     displayClusters();
-    initDiamondGrid();
-
+    resetGrid();
+    displayGrid();
 
     // Populate puzzle select
     for (i = 0; i < puzzles.length; i += 1) {
         $("#puzzles").append("<option value='" + i + "'>" + (i + 1) + "</option>");
     }
 
-    // Player moves
-    dragging = false;
-    $("#grid tbody td").click(function() {
-        y = parseInt($(this).index(), 10);
-        x = parseInt($(this).parent().index(), 10);
-        $("#selected").html("[" + x + ", " + y + "] " + dragging);
-        // Start move
-        if (dragging === false) {
-            x1 = x;
-            y1 = y;
-            dragging = true;
-            // drag to self
-        } else if (dragging === true && x1 === x && y1 === y) {
-            dragging = false;
-        } else if (dragging === true && anyons[secs][x1][y1] !== 0) {
-            move([x1, y1], [x, y]);
-            dragging = false;
-        } else {
-            console.log("Invalid move...");
-            dragging = false;
-        }
-        displayGrid();
-    });
-
-    // Debug position
+    // Diamond grid hover
     $("#grid tbody td").hover(function() {
-        y = parseInt($(this).index(), 10);
-        x = parseInt($(this).parent().index(), 10);
-        $("#coord").html("[" + x + ", " + y + "]");
-        cluster = adjacentCluster([x, y]);
-        $("#cluster").html(JSON.stringify(cluster));
-        if (clusterRemain(cluster) === 0) {
-            $("#cluster").css("background-color", "green");
-        } else {
-            $("#cluster").css("background-color", "red");
-        }
-        if (cluster.length > 0) {
-            segmentCluster(cluster);
-        }
-        highlightCells(cluster);
-    });
-
-    // Diamond grid debug
-    $("#diamondGrid tbody td").hover(function() {
         y = parseInt($(this).index(), 10);
         x = parseInt($(this).parent().index(), 10);
         $("#coord").html("[" + x + ", " + y + "]");
         cellType([x,y]);
     });
 
-    // Diamond grid link click
-    $("#diamondGrid tbody td").click(function() {
+    // Diamond grid click
+    $("#grid tbody td").click(function() {
         y = parseInt($(this).index(), 10);
         x = parseInt($(this).parent().index(), 10);
+
         // vertical  or horizontal link
         if (cellType([x, y]) === "link") {
-            if (x % 2 === 0){
-                cell1 = [x, y - 1];
-                cell2 = [x, y + 1];
-            } else {
-                cell1 = [x - 1, y];
-                cell2 = [x + 1, y];
-            }
-            cell = $("#diamondGrid tbody")[0].rows[x].cells[y];
-            $cell = $(cell);
-            $cell.toggleClass("linked");
+            toggleLink([x, y]);
+
         // mid cell cluster
         } else if (cellType([x, y]) === "mid") {
             cell1 = [x + 1, y + 1];
@@ -1076,7 +1165,7 @@ $(document).ready(function() {
                   + anyons[secs][cell2[0]/2][cell2[1]/2]
                   + anyons[secs][cell3[0]/2][cell3[1]/2]
                   + anyons[secs][cell4[0]/2][cell4[1]/2];
-            cell = $("#diamondGrid tbody")[0].rows[x].cells[y];
+            cell = $("#grid tbody")[0].rows[x].cells[y];
             $cell = $(cell);
             $cell.html(total % d);
         }
@@ -1088,6 +1177,7 @@ $(document).ready(function() {
         gametype = "puzzle";
         secs = 0;
         resetAnyons();
+        resetGrid();
         loadAnyons(puzzles[puzzleNum]);
         findContiguousClusters();
         displayGrid();
@@ -1099,7 +1189,6 @@ $(document).ready(function() {
         if (secs > 0) {
             secs -= 1;
             $("#secs").html(secs);
-            displayGrid();
         }
     });
     $("#error").click(function() {
@@ -1110,12 +1199,7 @@ $(document).ready(function() {
         gametype = "game";
         newGame();
     });
-    $("input[name='output']").change(function() {
-        output = $(this).val();
-        displayGrid();
-    });
     $("input[name='gametype']").change(function() {
         gametype = $(this).val();
-        displayGrid();
     });
 });

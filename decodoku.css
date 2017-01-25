@@ -13,29 +13,22 @@ td, th {
   font-size: 20px; }
 
 /* DIAMOND GRID */
-#diamondGrid td {
-  border: 1px solid white;
-  width: 20px;
-  height: 20px;
-  font-size: 14px; }
-#diamondGrid .syndrome {
-  color: white; }
-#diamondGrid .link {
-  background-color: #4d4d4d; }
-#diamondGrid .mid {
-  background-color: black; }
-#diamondGrid .linked {
-  background-color: green;
-  transform: rotate(90deg); }
-
-/* GRID */
-#grid td, #clusterGrid td {
-  border: 1px solid white; }
-#grid .highlight, #clusterGrid .highlight {
-  text-decoration: underline;
-  font-style: italic; }
-#grid .selected, #clusterGrid .selected {
-  font-size: 16px; }
+#grid {
+  margin-left: auto;
+  margin-right: auto; }
+  #grid td {
+    border: 0px solid white;
+    width: 25px;
+    height: 25px;
+    font-size: 18px; }
+  #grid .syndrome {
+    color: white; }
+  #grid .link {
+    background-color: #4d4d4d; }
+  #grid .mid {
+    background-color: black; }
+  #grid .linked {
+    transform: rotate(90deg); }
 
 /* COLORS */
 .group0 {

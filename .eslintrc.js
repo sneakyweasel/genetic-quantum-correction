@@ -25,7 +25,7 @@ module.exports = {
             "always"
         ],
         "no-unused-vars": [
-            1,
+            0,
             {"vars": "all", "args": "none"}
         ],
         "no-console": [
