@@ -732,26 +732,20 @@ function clusterSum(cluster) {
 // DISPLAY LINK
 function toggleLink(coord) {
     "use strict";
-    var x, y, cell, $cell, cell1, cell2, clusterNum, total, x1, y1, x2, y2, i, cluster;
+    var x, y, cell, $cell, cell1, cell2, clusterNum, total, i, cluster;
     x = coord[0];
     y = coord[1];
     // get cells
     if (x % 2 === 0){
-        cell1 = [x, y - 1];
-        cell2 = [x, y + 1];
+        cell1 = [x / 2, (y - 1) / 2];
+        cell2 = [x / 2, (y + 1) / 2];
     } else {
-        cell1 = [x - 1, y];
-        cell2 = [x + 1, y];
+        cell1 = [(x - 1) / 2, y / 2];
+        cell2 = [(x + 1) / 2, y / 2];
     }
-    // anyons coords
-    x1 = cell1[0] / 2;
-    y1 = cell1[1] / 2;
-    x2 = cell2[0] / 2;
-    y2 = cell2[1] / 2;
-    // create a new cluster id
+    // link and create or update the cluster
     clusterNum = nextFreeClusterId();
-    // linked cluster
-    cluster = linkedCluster([x1, y1],[x2, y2]);
+    cluster = linkedCluster(cell1, cell2);
     total = clusterSum(cluster);
     console.log("CLUSTER" + JSON.stringify(cluster) + " - TOTAL: " + total);
     // display linked cluster
@@ -760,16 +754,52 @@ function toggleLink(coord) {
         clusters[cluster[i][0]][cluster[i][1]] = clusterNum;
         $cell = $(cell);
         $cell.removeClass();
-        $cell.html(total);
+        if (total !== 0) {
+            $cell.html(total);
+        } else {
+            $cell.html("");
+        }
         $cell.toggleClass("group" + clusterNum);
     }
-    // toggle linked
+    // toggle linked cell
     cell = $("#grid tbody")[0].rows[x].cells[y];
     $cell = $(cell);
+    $cell.html("+");
     $cell.toggleClass("linked");
-
-    //displayGrid();
 }
+
+
+// FIND COORD FROM POSITION
+function getCoordFromIndex(id) {
+    "use strict";
+    var row, col, cell, $cell;
+    //vertical and horizontal (starting at index 0 [0,1] ending at index 55 [14, 13] )
+    if (id < 56) {
+        row = Math.floor(id / 7);
+        col = id - row * 7;
+        row = row * 2;
+        col = col * 2 + 1;
+    } else {
+        row = Math.floor((id - 56) / 8);
+        col = (id - 56) - row * 8;
+        row = row * 2 + 1;
+        col = col * 2;
+    }
+    return [row, col];
+}
+
+// PROCESS LINK STRING
+function processLinks(links) {
+    "use strict";
+    var i, coord;
+    for (i = 0; i < links.length; i += 1) {
+        coord = getCoordFromIndex(i);
+        if (links[i] === "1") {
+            toggleLink(coord);
+        }
+    }
+}
+
 
 //------------------------HELPERS-----------------------------------------------
 //LIST ALL CELLS
