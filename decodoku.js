@@ -1,4 +1,4 @@
-/* global $, document, _*/
+/* global $, document, _, Genetic*/
 //------------------------------------------------------------------------------
 // QUANTUM ERROR CORRECTION CODE
 //------------------------------------------------------------------------------
@@ -224,9 +224,9 @@ class Grid {
                 if (x % 2 === 0 && y % 2 === 0) {
                     cell = $("#grid tbody")[0].rows[x].cells[y];
                     $(cell).addClass("syndrome");
-                    if (anyons[secs][x/2][y/2] !== 0) {
-                        $(cell).html(anyons[secs][x/2][y/2]);
-                        $(cell).addClass("group" + clusters[x/2][y/2]);
+                    if (anyons[secs][x / 2][y / 2] !== 0) {
+                        $(cell).html(anyons[secs][x / 2][y / 2]);
+                        $(cell).addClass("group" + clusters[x / 2][y / 2]);
                     }
                 } else if (x % 2 === 0 && y % 2 === 1) {
                     cell = $("#grid tbody")[0].rows[x].cells[y];
@@ -294,39 +294,6 @@ function saveAnyons() {
     }
     console.log(anyonsString);
     return anyonsString;
-}
-
-
-// LIST ALL CLUSTERS
-function listClustersIds() {
-    "use strict";
-    var x, y, clusterIds;
-    clusterIds = [];
-    for (x = 0; x < gridSize; x += 1) {
-        for (y = 0; y < gridSize; y += 1) {
-            if (clusters[x][y] !== undefined) {
-                clusterIds.push(clusters[x][y]);
-            }
-        }
-    }
-    clusterIds = _.uniq(clusterIds);
-    return clusterIds;
-}
-
-
-// NEXT FREE CLUSTER ID
-function nextFreeClusterId() {
-    "use strict";
-    var i, clusterIds;
-    clusterIds = listClustersIds();
-    if (clusterIds.length === 0) {
-        clusterIds.push(0);
-    }
-    i = 0;
-    while (_.contains(clusterIds, i) === true) {
-        i += 1;
-    }
-    return i;
 }
 
 
@@ -530,7 +497,7 @@ function gameCheck() {
         if (countAnyons() === 0) {
             alert("Congrats! Your score on puzzle " + $("#puzzles").val() + " is :" + secs);
         }
-    // game logic
+        // game logic
     } else if (gametype === "game") {
         // game over
         if (checkSpanners() === true) {
@@ -564,69 +531,6 @@ function newGame() {
 
 
 //------------------------DIAMOND GRID------------------------------------------
-// INIT DIAMOND GRID
-function initGrid() {
-    "use strict";
-    var x, y, row, rowData;
-    // create DOM
-    for (y = 0; y < gridSize * 2 - 1; y += 1) {
-        row = $("<tr></tr>");
-        for (x = 0; x < gridSize * 2 - 1; x += 1) {
-            rowData = $("<td></td>");
-            row.append(rowData);
-        }
-        $("#grid tbody").append(row);
-    }
-}
-
-
-// RESET DIAMOND GRID
-function resetGrid() {
-    "use strict";
-    var x, y, cell, $cell;
-    // create DOM
-    for (y = 0; y < gridSize * 2 - 1; y += 1) {
-        for (x = 0; x < gridSize * 2 - 1; x += 1) {
-            cell = $("#grid tbody")[0].rows[x].cells[y];
-            $cell = $(cell);
-            $cell.removeClass();
-            $cell.html("");
-        }
-    }
-}
-
-
-// DISPLAY GRID
-function displayGrid() {
-    "use strict";
-    var x, y, cell;
-    for (x = 0; x < gridSize * 2 - 1; x += 1) {
-        for (y = 0; y < gridSize * 2 - 1; y += 1) {
-            if (x % 2 === 0 && y % 2 === 0) {
-                cell = $("#grid tbody")[0].rows[x].cells[y];
-                $(cell).addClass("syndrome");
-                if (anyons[secs][x/2][y/2] !== 0) {
-                    $(cell).html(anyons[secs][x/2][y/2]);
-                    $(cell).addClass("group" + clusters[x/2][y/2]);
-                }
-            } else if (x % 2 === 0 && y % 2 === 1) {
-                cell = $("#grid tbody")[0].rows[x].cells[y];
-                $(cell).addClass("link");
-                $(cell).html("|");
-            } else if (x % 2 === 1 && y % 2 === 0) {
-                cell = $("#grid tbody")[0].rows[x].cells[y];
-                $(cell).addClass("link");
-                $(cell).html("-");
-            } else {
-                cell = $("#grid tbody")[0].rows[x].cells[y];
-                $(cell).addClass("mid");
-                //$(cell).html("+");
-            }
-        }
-    }
-}
-
-
 // CELL TYPE
 function cellType(coord) {
     "use strict";
@@ -646,7 +550,7 @@ function cellType(coord) {
 // GET LINK STATUS
 function checkLink(coord1, coord2) {
     "use strict";
-    var x, y, x1, y1, x2, y2,  cell;
+    var x, y, x1, y1, x2, y2, cell;
     x1 = coord1[0] * 2;
     y1 = coord1[1] * 2;
     x2 = coord2[0] * 2;
@@ -700,7 +604,10 @@ function linkedCluster(coord1, coord2) {
     y1 = coord1[1];
     x2 = coord2[0];
     y2 = coord2[1];
-    queue = [[x1, y1], [x2, y2]];
+    queue = [
+        [x1, y1],
+        [x2, y2]
+    ];
     // until queue is empty
     while (queue.length > 0) {
         // get last item in queue
@@ -729,75 +636,22 @@ function clusterSum(cluster) {
     return total % d;
 }
 
-// DISPLAY LINK
-function toggleLink(coord) {
-    "use strict";
-    var x, y, cell, $cell, cell1, cell2, clusterNum, total, i, cluster;
-    x = coord[0];
-    y = coord[1];
-    // get cells
-    if (x % 2 === 0){
-        cell1 = [x / 2, (y - 1) / 2];
-        cell2 = [x / 2, (y + 1) / 2];
-    } else {
-        cell1 = [(x - 1) / 2, y / 2];
-        cell2 = [(x + 1) / 2, y / 2];
-    }
-    // link and create or update the cluster
-    clusterNum = nextFreeClusterId();
-    cluster = linkedCluster(cell1, cell2);
-    total = clusterSum(cluster);
-    console.log("CLUSTER" + JSON.stringify(cluster) + " - TOTAL: " + total);
-    // display linked cluster
-    for (i = 0; i < cluster.length; i += 1) {
-        cell = $("#grid tbody")[0].rows[cluster[i][0]*2].cells[cluster[i][1]*2];
-        clusters[cluster[i][0]][cluster[i][1]] = clusterNum;
-        $cell = $(cell);
-        $cell.removeClass();
-        if (total !== 0) {
-            $cell.html(total);
-        } else {
-            $cell.html("");
-        }
-        $cell.toggleClass("group" + clusterNum);
-    }
-    // toggle linked cell
-    cell = $("#grid tbody")[0].rows[x].cells[y];
-    $cell = $(cell);
-    $cell.html("+");
-    $cell.toggleClass("linked");
-}
 
-
-// FIND COORD FROM POSITION
-function getCoordFromIndex(id) {
+//SCORE GRID FITNESS
+function scoreGrid() {
     "use strict";
-    var row, col, cell, $cell;
-    //vertical and horizontal (starting at index 0 [0,1] ending at index 55 [14, 13] )
-    if (id < 56) {
-        row = Math.floor(id / 7);
-        col = id - row * 7;
-        row = row * 2;
-        col = col * 2 + 1;
-    } else {
-        row = Math.floor((id - 56) / 8);
-        col = (id - 56) - row * 8;
-        row = row * 2 + 1;
-        col = col * 2;
-    }
-    return [row, col];
-}
-
-// PROCESS LINK STRING
-function processLinks(links) {
-    "use strict";
-    var i, coord;
-    for (i = 0; i < links.length; i += 1) {
-        coord = getCoordFromIndex(i);
-        if (links[i] === "1") {
-            toggleLink(coord);
+    var score, x, y, cell;
+    score = 0;
+    for (x = 0; x < gridSize * 2; x += 2) {
+        for (y = 0; y < gridSize * 2; y += 2) {
+            // Count cleared grid
+            cell = $("#grid tbody")[0].rows[x].cells[y];
+            if ($(cell).html() === "") {
+                score += 1;
+            }
         }
     }
+    return score;
 }
 
 
@@ -1151,17 +1005,321 @@ function segmentCluster(cluster) {
 }
 
 
+//------------------------GENETIC-----------------------------------------------
+var genetic = Genetic.create();
+
+genetic.optimize = Genetic.Optimize.Maximize;
+genetic.select1 = Genetic.Select1.Tournament2;
+genetic.select2 = Genetic.Select2.Tournament2;
+
+genetic.anyons = [];
+genetic.clusters = [];
+
+
+// INIT ANYONS
+genetic.initAnyons = function() {
+    "use strict";
+    var x, y;
+    for (x = 0; x < this.userData["gridSize"]; x += 1) {
+        this.anyons[x] = [];
+        this.clusters[x] = [];
+        for (y = 0; y < this.userData["gridSize"]; y += 1) {
+            this.anyons[x][y] = 0;
+            this.clusters[x][y] = 0;
+        }
+    }
+};
+
+
+// INIT DIAMOND GRID
+genetic.initGrid = function() {
+    "use strict";
+    var x, y, row, rowData;
+    for (y = 0; y < this.userData["gridSize"] * 2 - 1; y += 1) {
+        row = $("<tr></tr>");
+        for (x = 0; x < this.userData["gridSize"] * 2 - 1; x += 1) {
+            rowData = $("<td></td>");
+            row.append(rowData);
+        }
+        $("#grid tbody").append(row);
+    }
+};
+
+
+// RESET DIAMOND GRID
+genetic.resetGrid = function() {
+    "use strict";
+    var x, y, cell, $cell;
+    // create DOM
+    for (y = 0; y < this.userData["gridSize"] * 2 - 1; y += 1) {
+        for (x = 0; x < this.userData["gridSize"] * 2 - 1; x += 1) {
+            cell = $("#grid tbody")[0].rows[x].cells[y];
+            $cell = $(cell);
+            $cell.removeClass();
+            $cell.html("");
+        }
+    }
+};
+
+
+// DISPLAY GRID
+genetic.displayGrid = function() {
+    "use strict";
+    var x, y, cell;
+    for (x = 0; x < this.userData["gridSize"] * 2 - 1; x += 1) {
+        for (y = 0; y < this.userData["gridSize"] * 2 - 1; y += 1) {
+            if (x % 2 === 0 && y % 2 === 0) {
+                cell = $("#grid tbody")[0].rows[x].cells[y];
+                $(cell).addClass("syndrome");
+                if (this.anyons[x / 2][y / 2] !== 0) {
+                    $(cell).html(this.anyons[x / 2][y / 2]);
+                    $(cell).addClass("group" + this.clusters[x / 2][y / 2]);
+                }
+            } else if (x % 2 === 0 && y % 2 === 1) {
+                cell = $("#grid tbody")[0].rows[x].cells[y];
+                $(cell).addClass("link");
+                $(cell).html("|");
+            } else if (x % 2 === 1 && y % 2 === 0) {
+                cell = $("#grid tbody")[0].rows[x].cells[y];
+                $(cell).addClass("link");
+                $(cell).html("-");
+            } else {
+                cell = $("#grid tbody")[0].rows[x].cells[y];
+                $(cell).addClass("mid");
+                //$(cell).html("+");
+            }
+        }
+    }
+};
+
+
+// FIND COORD FROM POSITION
+genetic.getCoordFromIndex = function(id) {
+    "use strict";
+    var row, col, cell, $cell;
+    //vertical and horizontal (starting at index 0 [0,1] ending at index 55 [14, 13] )
+    if (id < 56) {
+        row = Math.floor(id / 7);
+        col = id - row * 7;
+        row = row * 2;
+        col = col * 2 + 1;
+    } else {
+        row = Math.floor((id - 56) / 8);
+        col = (id - 56) - row * 8;
+        row = row * 2 + 1;
+        col = col * 2;
+    }
+    return [row, col];
+};
+
+
+// LIST ALL CLUSTERS
+genetic.listClustersIds = function() {
+    "use strict";
+    var x, y, clusterIds;
+    clusterIds = [];
+    for (x = 0; x < this.userData["gridSize"]; x += 1) {
+        for (y = 0; y < this.userData["gridSize"]; y += 1) {
+            if (this.clusters[x][y] !== undefined) {
+                clusterIds.push(this.clusters[x][y]);
+            }
+        }
+    }
+    clusterIds = _.uniq(clusterIds);
+    return clusterIds;
+};
+
+
+// NEXT FREE CLUSTER ID
+genetic.nextFreeClusterId = function() {
+    "use strict";
+    var i, clusterIds;
+    clusterIds = this.listClustersIds();
+    if (clusterIds.length === 0) {
+        clusterIds.push(0);
+    }
+    i = 0;
+    while (_.contains(clusterIds, i) === true) {
+        i += 1;
+    }
+    return i;
+};
+
+
+// DISPLAY LINK
+genetic.toggleLink = function(coord) {
+    "use strict";
+    var x, y, cell, $cell, cell1, cell2, clusterNum, total, i, cluster;
+    x = coord[0];
+    y = coord[1];
+    // get cells
+    if (x % 2 === 0) {
+        cell1 = [x / 2, (y - 1) / 2];
+        cell2 = [x / 2, (y + 1) / 2];
+    } else {
+        cell1 = [(x - 1) / 2, y / 2];
+        cell2 = [(x + 1) / 2, y / 2];
+    }
+    // link and create or update the cluster
+    clusterNum = this.nextFreeClusterId();
+    cluster = linkedCluster(cell1, cell2);
+    total = clusterSum(cluster);
+    //console.log("CLUSTER" + JSON.stringify(cluster) + " - TOTAL: " + total);
+    // display linked cluster
+    for (i = 0; i < cluster.length; i += 1) {
+        cell = $("#grid tbody")[0].rows[cluster[i][0] * 2].cells[cluster[i][1] * 2];
+        this.clusters[cluster[i][0]][cluster[i][1]] = clusterNum;
+        $cell = $(cell);
+        $cell.removeClass();
+        if (total !== 0) {
+            $cell.html(total);
+        } else {
+            $cell.html("");
+        }
+        $cell.toggleClass("group" + clusterNum);
+    }
+    // toggle linked cell
+    cell = $("#grid tbody")[0].rows[x].cells[y];
+    $cell = $(cell);
+    $cell.html("+");
+    $cell.toggleClass("linked");
+};
+
+
+// PROCESS LINK STRING
+genetic.processLinks = function(links) {
+    "use strict";
+    var i, coord, score;
+    score = 0;
+    for (i = 0; i < links.length; i += 1) {
+        coord = this.getCoordFromIndex(i);
+        if (links[i] === "1") {
+            this.toggleLink(coord);
+            score += 1;
+        }
+    }
+    return score;
+};
+
+
+// CREATE SEEDS
+genetic.seed = function() {
+    function randomString(len) {
+        var text = "";
+        var charset = "01";
+        for (var i = 0; i < len; i++)
+            text += charset.charAt(Math.floor(Math.random() * charset.length));
+        return text;
+    }
+    // create random strings that are equal in length to solution
+    return randomString(112);
+};
+
+
+// MUTATIONS
+genetic.mutate = function(entity) {
+    function replaceAt(str, index, character) {
+        return str.substr(0, index) + character + str.substr(index + character.length);
+    }
+    // chromosomal drift
+    var charset = "01";
+    var i = Math.floor(Math.random() * entity.length);
+    return replaceAt(entity, i, charset.charAt(Math.floor(Math.random() * charset.length)));
+};
+
+
+// CROSSOVER
+genetic.crossover = function(mother, father) {
+    // two-point crossover
+    var len = mother.length;
+    var ca = Math.floor(Math.random() * len);
+    var cb = Math.floor(Math.random() * len);
+    if (ca > cb) {
+        var tmp = cb;
+        cb = ca;
+        ca = tmp;
+    }
+    var son = father.substr(0, ca) + mother.substr(ca, cb - ca) + father.substr(cb);
+    var daughter = mother.substr(0, ca) + father.substr(ca, cb - ca) + mother.substr(cb);
+    return [son, daughter];
+};
+
+
+// FITNESS
+genetic.fitness = function(entity) {
+    var fitness = 0;
+    var linkScore = this.processLinks(entity);
+    // Positive rating
+    // Add numbers of cleared cells
+    fitness += scoreGrid();
+    // Add numbers of unique ids
+    fitness += this.listClustersIds().length;
+    // Negative rating
+    // Remove number of links
+    fitness -= linkScore;
+    return fitness;
+};
+
+
+// STOP SIMULATION
+genetic.generation = function(pop, generation, stats) {
+    // stop running once we've reached the solution
+    this.processLinks(pop[0].entity);
+
+    if (scoreGrid === gridSize * gridSize) {
+        return false;
+    } else {
+        return true;
+    }
+};
+
+
+// OUTPUT PROGRESS NOTIFICATIONS
+genetic.notification = function(pop, generation, stats, isFinished) {
+
+    function lerp(a, b, p) {
+        return a + (b - a) * p;
+    }
+
+    var value = pop[0].entity;
+    this.last = this.last || value;
+
+    if (pop != 0 && value == this.last)
+        return;
+
+    // Reset world
+    resetGrid();
+    loadAnyons(1);
+
+    // Process links
+    this.processLinks(value);
+
+    // Prepend row
+    var buf = "";
+    buf += "<tr>";
+    buf += "<td>" + generation + "</td>";
+    buf += "<td>" + pop[0].fitness.toPrecision(5) + "</td>";
+    buf += "<td class='solution'>" + value + "</td>";
+    buf += "<td>" + "</td>";
+    buf += "<td>" + "</td>";
+    buf += "<td>" + "</td>";
+    buf += "</tr>";
+    $("#results tbody").prepend(buf);
+
+    // KEEP LAST VALUE
+    this.last = value;
+};
+
+
+
+
 //------------------------MAIN--------------------------------------------------
 $(document).ready(function() {
     "use strict";
     var x, y, puzzleNum, i, cell1, cell2, cell3, cell4, cell, $cell, total, randomPuzzle;
-    initGrid();
-    resetAnyons();
-    randomPuzzle = Math.floor(Math.random() * puzzles.length);
-    loadAnyons(puzzles[randomPuzzle]);
-    displayClusters();
-    resetGrid();
-    displayGrid();
+    genetic.initGrid();
+    genetic.loadAnyons(puzzles[randomPuzzle]);
+    genetic.displayGrid();
 
     // Populate puzzle select
     for (i = 0; i < puzzles.length; i += 1) {
@@ -1173,7 +1331,7 @@ $(document).ready(function() {
         y = parseInt($(this).index(), 10);
         x = parseInt($(this).parent().index(), 10);
         $("#coord").html("[" + x + ", " + y + "]");
-        cellType([x,y]);
+        cellType([x, y]);
     });
 
     // Diamond grid click
@@ -1185,16 +1343,16 @@ $(document).ready(function() {
         if (cellType([x, y]) === "link") {
             toggleLink([x, y]);
 
-        // mid cell cluster
+            // mid cell cluster
         } else if (cellType([x, y]) === "mid") {
             cell1 = [x + 1, y + 1];
             cell2 = [x + 1, y - 1];
             cell3 = [x - 1, y + 1];
             cell4 = [x - 1, y - 1];
-            total = anyons[secs][cell1[0]/2][cell1[1]/2]
-                  + anyons[secs][cell2[0]/2][cell2[1]/2]
-                  + anyons[secs][cell3[0]/2][cell3[1]/2]
-                  + anyons[secs][cell4[0]/2][cell4[1]/2];
+            total = anyons[secs][cell1[0] / 2][cell1[1] / 2] +
+                anyons[secs][cell2[0] / 2][cell2[1] / 2] +
+                anyons[secs][cell3[0] / 2][cell3[1] / 2] +
+                anyons[secs][cell4[0] / 2][cell4[1] / 2];
             cell = $("#grid tbody")[0].rows[x].cells[y];
             $cell = $(cell);
             $cell.html(total % d);
@@ -1231,5 +1389,20 @@ $(document).ready(function() {
     });
     $("input[name='gametype']").change(function() {
         gametype = $(this).val();
+    });
+    $("#solve").click(function() {
+        $("#results tbody").html("");
+        var config = {
+            "iterations": 3000,
+            "size": 250,
+            "crossover": 0.3,
+            "mutation": 0.3,
+            "fittestAlwaysSurvives": false,
+            "skip": 20
+        };
+        var userData = {
+            "gridSize": 8
+        };
+        genetic.evolve(config, userData);
     });
 });

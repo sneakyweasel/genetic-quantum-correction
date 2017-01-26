@@ -7,6 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script src="genetic.js"></script>
     <script src="decodoku.js"></script>
     <link rel="stylesheet" type="text/css" href="decodoku.css">
 </head>
@@ -43,6 +44,7 @@
           <select name="puzzles" id="puzzles">
           </select>
           <button id="load" type="button" name="load">Load</button>
+          <button id="solve" type="button" name="solve">Solve</button>
           <button id="save" type="button" name="save">Save</button>
         </p>
         <p>
@@ -51,6 +53,23 @@
             <button id="newgame" type="button" name="newgame">New game</button>
         </p>
     </div>
+
+    <div>
+        <table id="results">
+            <thead>
+                <tr>
+                    <th>generation</th>
+                    <th>fitness</th>
+                    <th>links</th>
+                    <th>clusters</th>
+                    <th>blank cells</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
 
     <div>
         <table id="clusters">
