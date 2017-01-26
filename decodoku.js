@@ -1012,6 +1012,7 @@ genetic.optimize = Genetic.Optimize.Maximize;
 genetic.select1 = Genetic.Select1.Tournament2;
 genetic.select2 = Genetic.Select2.Tournament2;
 
+genetic.gridSize = 8;
 genetic.anyons = [];
 genetic.clusters = [];
 
@@ -1020,10 +1021,10 @@ genetic.clusters = [];
 genetic.initAnyons = function() {
     "use strict";
     var x, y;
-    for (x = 0; x < this.userData["gridSize"]; x += 1) {
+    for (x = 0; x < this.gridSize; x += 1) {
         this.anyons[x] = [];
         this.clusters[x] = [];
-        for (y = 0; y < this.userData["gridSize"]; y += 1) {
+        for (y = 0; y < this.gridSize; y += 1) {
             this.anyons[x][y] = 0;
             this.clusters[x][y] = 0;
         }
@@ -1035,13 +1036,30 @@ genetic.initAnyons = function() {
 genetic.initGrid = function() {
     "use strict";
     var x, y, row, rowData;
-    for (y = 0; y < this.userData["gridSize"] * 2 - 1; y += 1) {
+    for (y = 0; y < this.gridSize * 2 - 1; y += 1) {
         row = $("<tr></tr>");
-        for (x = 0; x < this.userData["gridSize"] * 2 - 1; x += 1) {
+        for (x = 0; x < this.gridSize * 2 - 1; x += 1) {
             rowData = $("<td></td>");
             row.append(rowData);
         }
         $("#grid tbody").append(row);
+    }
+};
+
+
+// LOAD ANYONS
+genetic.loadAnyons = function(anyonsString) {
+    "use strict";
+    var x, y, total;
+    total = 0;
+    for (x = 0; x < this.gridSize; x += 1) {
+        for (y = 0; y < this.gridSize; y += 1) {
+            this.anyons[y][x] = parseInt(anyonsString[y * gridSize + x], 10);
+            total += parseInt(this.anyons[y][x], 10);
+        }
+    }
+    if (total % d !== 0) {
+        alert("Inconsistent problem error");
     }
 };
 
@@ -1051,8 +1069,8 @@ genetic.resetGrid = function() {
     "use strict";
     var x, y, cell, $cell;
     // create DOM
-    for (y = 0; y < this.userData["gridSize"] * 2 - 1; y += 1) {
-        for (x = 0; x < this.userData["gridSize"] * 2 - 1; x += 1) {
+    for (y = 0; y < this.gridSize * 2 - 1; y += 1) {
+        for (x = 0; x < this.gridSize * 2 - 1; x += 1) {
             cell = $("#grid tbody")[0].rows[x].cells[y];
             $cell = $(cell);
             $cell.removeClass();
@@ -1066,8 +1084,8 @@ genetic.resetGrid = function() {
 genetic.displayGrid = function() {
     "use strict";
     var x, y, cell;
-    for (x = 0; x < this.userData["gridSize"] * 2 - 1; x += 1) {
-        for (y = 0; y < this.userData["gridSize"] * 2 - 1; y += 1) {
+    for (x = 0; x < this.gridSize * 2 - 1; x += 1) {
+        for (y = 0; y < this.gridSize * 2 - 1; y += 1) {
             if (x % 2 === 0 && y % 2 === 0) {
                 cell = $("#grid tbody")[0].rows[x].cells[y];
                 $(cell).addClass("syndrome");
@@ -1118,14 +1136,14 @@ genetic.listClustersIds = function() {
     "use strict";
     var x, y, clusterIds;
     clusterIds = [];
-    for (x = 0; x < this.userData["gridSize"]; x += 1) {
-        for (y = 0; y < this.userData["gridSize"]; y += 1) {
+    for (x = 0; x < this.gridSize; x += 1) {
+        for (y = 0; y < this.gridSize; y += 1) {
             if (this.clusters[x][y] !== undefined) {
                 clusterIds.push(this.clusters[x][y]);
             }
         }
     }
-    clusterIds = _.uniq(clusterIds);
+    clusterIds = clusterIds.filter((v, i, a) => a.indexOf(v) === i);
     return clusterIds;
 };
 
@@ -1139,11 +1157,90 @@ genetic.nextFreeClusterId = function() {
         clusterIds.push(0);
     }
     i = 0;
-    while (_.contains(clusterIds, i) === true) {
+    while (clusterIds.includes(i) === true) {
         i += 1;
     }
     return i;
 };
+
+
+// GET LINK STATUS
+genetic.checkLink = function(coord1, coord2) {
+    "use strict";
+    var x, y, x1, y1, x2, y2, cell;
+    x1 = coord1[0] * 2;
+    y1 = coord1[1] * 2;
+    x2 = coord2[0] * 2;
+    y2 = coord2[1] * 2;
+    if (x1 === x2) {
+        x = x1;
+        y = [y1, y2].reduce((a, b) => Math.min(a, b)) + 1;
+    } else {
+        x = [x1, x2].reduce((a, b) => Math.min(a, b)) + 1;
+        y = y1;
+    }
+    cell = $("#grid tbody")[0].rows[x].cells[y];
+    return $(cell).hasClass("linked");
+};
+
+
+// GET ADJACENT LINKS
+genetic.adjacentLinks = function(coord) {
+    "use strict";
+    var links, x, y;
+    x = coord[0];
+    y = coord[1];
+    links = [];
+    // get up
+    if (x > 0 && this.checkLink([x, y], [x - 1, y]) === true) {
+        links.push([x - 1, y]);
+    }
+    // get down
+    if (x < this.gridSize - 1 && this.checkLink([x, y], [x + 1, y]) === true) {
+        links.push([x + 1, y]);
+    }
+    // get left
+    if (y > 0 && this.checkLink([x, y], [x, y - 1]) === true) {
+        links.push([x, y - 1]);
+    }
+    // get right
+    if (y < this.gridSize - 1 && this.checkLink([x, y], [x, y + 1]) === true) {
+        links.push([x, y + 1]);
+    }
+    return links;
+};
+
+
+// LINKED CLUSTER
+genetic.linkedCluster = function(coord1, coord2) {
+    "use strict";
+    var cluster, queue, current, cells, i, x1, y1, x2, y2;
+    cluster = [];
+    cells = [];
+    x1 = coord1[0];
+    y1 = coord1[1];
+    x2 = coord2[0];
+    y2 = coord2[1];
+    queue = [
+        [x1, y1],
+        [x2, y2]
+    ];
+    // until queue is empty
+    while (queue.length > 0) {
+        // get last item in queue
+        current = queue.pop();
+        // save it in painted cluster
+        cluster.push(current);
+        // get adjacent cells
+        cells = this.adjacentLinks(current);
+        for (i = 0; i < cells.length; i += 1) {
+            if (containsCoords(cells[i], queue) === false && containsCoords(cells[i], cluster) === false) {
+                queue.push(cells[i]);
+            }
+        }
+    }
+    return cluster;
+}
 
 
 // DISPLAY LINK
@@ -1162,7 +1259,7 @@ genetic.toggleLink = function(coord) {
     }
     // link and create or update the cluster
     clusterNum = this.nextFreeClusterId();
-    cluster = linkedCluster(cell1, cell2);
+    cluster = this.linkedCluster(cell1, cell2);
     total = clusterSum(cluster);
     //console.log("CLUSTER" + JSON.stringify(cluster) + " - TOTAL: " + total);
     // display linked cluster
@@ -1288,8 +1385,8 @@ genetic.notification = function(pop, generation, stats, isFinished) {
         return;
 
     // Reset world
-    resetGrid();
-    loadAnyons(1);
+    this.resetGrid();
+    this.loadAnyons(1);
 
     // Process links
     this.processLinks(value);
@@ -1317,8 +1414,9 @@ genetic.notification = function(pop, generation, stats, isFinished) {
 $(document).ready(function() {
     "use strict";
     var x, y, puzzleNum, i, cell1, cell2, cell3, cell4, cell, $cell, total, randomPuzzle;
+    genetic.initAnyons();
     genetic.initGrid();
-    genetic.loadAnyons(puzzles[randomPuzzle]);
+    genetic.loadAnyons(puzzles[1]);
     genetic.displayGrid();
 
     // Populate puzzle select
