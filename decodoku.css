@@ -23,6 +23,7 @@ td, th {
     height: 25px;
     font-size: 18px; }
   #grid .syndrome {
+    background-color: red;
     color: white; }
   #grid .link {
     background-color: black;
@@ -32,6 +33,12 @@ td, th {
     background-color: black; }
   #grid .linked {
     transform: rotate(90deg); }
+
+/* RESULTS */
+#results {
+  width: 100%; }
+  #results td, #results th {
+    font-size: 15px; }
 
 /* COLORS */
 .group0 {
