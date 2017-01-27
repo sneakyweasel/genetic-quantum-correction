@@ -159,137 +159,6 @@ var puzzles = [
 ];
 
 
-// LIST ALL CLUSTERS
-function listClustersIds() {
-    "use strict";
-    var x, y, clusterIds;
-    clusterIds = [];
-    for (x = 0; x < gridSize; x += 1) {
-        for (y = 0; y < gridSize; y += 1) {
-            if (clusters[x][y] !== undefined) {
-                clusterIds.push(clusters[x][y]);
-            }
-        }
-    }
-    clusterIds = clusterIds.filter((v, i, a) => a.indexOf(v) === i);
-    return clusterIds;
-}
-
-
-// NEXT FREE CLUSTER ID
-function nextFreeClusterId() {
-    "use strict";
-    var i, clusterIds;
-    clusterIds = listClustersIds();
-    if (clusterIds.length === 0) {
-        clusterIds.push(0);
-    }
-    i = 0;
-    while (clusterIds.includes(i) === true) {
-        i += 1;
-    }
-    return i;
-}
-
-
-//LIST ALL CELLS
-function listCells() {
-    "use strict";
-    var x, y, cells;
-    cells = [];
-    for (x = 0; x < gridSize; x += 1) {
-        for (y = 0; y < gridSize; y += 1) {
-            if (anyons[secs][x][y] !== 0) {
-                cells.push([x, y]);
-            }
-        }
-    }
-    return cells;
-}
-
-
-// GET ADJACENT CELLS
-function adjacentCells(coord) {
-    "use strict";
-    var cells, fullCells, i, x, y;
-    x = coord[0];
-    y = coord[1];
-    cells = [];
-    fullCells = [];
-    // get up
-    if (x > 0) {
-        cells.push([x - 1, y]);
-    }
-    // get down
-    if (x < gridSize - 1) {
-        cells.push([x + 1, y]);
-    }
-    // get left
-    if (y > 0) {
-        cells.push([x, y - 1]);
-    }
-    // get right
-    if (y < gridSize - 1) {
-        cells.push([x, y + 1]);
-    }
-    for (i = 0; i < cells.length; i += 1) {
-        if (anyons[secs][cells[i][0]][cells[i][1]] !== 0) {
-            fullCells.push(cells[i]);
-        }
-    }
-    return fullCells;
-}
-
-
-// CONTAINS COORD
-function containsCoords(coord, array) {
-    "use strict";
-    var i, x, y;
-    x = coord[0];
-    y = coord[1];
-    for (i = 0; i < array.length; i += 1) {
-        if (array[i][0] === x && array[i][1] === y) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
-// GET ADJACENT CLUSTER
-function adjacentCluster(coord) {
-    "use strict";
-    var cluster, queue, current, cells, i, x, y;
-    cluster = [];
-    cells = [];
-    x = coord[0];
-    y = coord[1];
-    if (anyons[secs][x][y] !== 0) {
-        queue = [
-            [x, y]
-        ];
-        // until queue is empty
-        while (queue.length > 0) {
-            // get last item in queue
-            current = queue.pop();
-            // save it in painted cluster
-            cluster.push(current);
-            // get adjacent cells
-            cells = adjacentCells(current);
-            for (i = 0; i < cells.length; i += 1) {
-                if (containsCoords(cells[i], queue) === false && containsCoords(cells[i], cluster) === false) {
-                    queue.push(cells[i]);
-                }
-            }
-        }
-    }
-    return cluster;
-}
-
-
-
-
-
 //------------------------GENETIC-----------------------------------------------
 var genetic = Genetic.create();
 
@@ -373,12 +242,23 @@ genetic.getCoordFromIndex = function(id) {
 // PROCESS LINK STRING
 genetic.loadLinks = function(links) {
     "use strict";
-    var i, coord, score;
-    score = 0;
+    var i, coord;
     for (i = 0; i < links.length; i += 1) {
         coord = this.getCoordFromIndex(i);
         if (links[i] === "1") {
             this.anyons[coord[0]][coord[1]] = "+";
+        }
+    }
+};
+
+
+// PROCESS LINK STRING
+genetic.countLinks = function(links) {
+    "use strict";
+    var i, coord, score;
+    score = 0;
+    for (i = 0; i < links.length; i += 1) {
+        if (links[i] === "1") {
             score += 1;
         }
     }
@@ -613,7 +493,7 @@ genetic.scoreGrid = function() {
     score = 0;
     for (x = 0; x < this.gridSize; x += 1) {
         for (y = 0; y < this.gridSize; y += 1) {
-            if (this.anyons[x*2][y*2] !== 0) {
+            if (this.anyons[x*2][y*2] === 0) {
                 score += 1;
             }
         }
@@ -671,15 +551,15 @@ genetic.fitness = function(entity) {
     fitness = 0;
     this.resetAnyons();
     this.loadAnyons("6003907404044709030003000700000004550000064037642865550000000582");
-    links = this.loadLinks(entity);
+    this.loadLinks(entity);
     this.processLinks();
     // Positive rating
     // Add numbers of cleared cells
     fitness += this.scoreGrid();
     // Add numbers of unique ids
-    fitness += this.listClustersIds().length * 2;
+    fitness += this.listClustersIds().length;
     // Negative rating
-    fitness -= links;
+    fitness -= this.countLinks(entity);
     // Remove number of links
     return fitness;
 };
@@ -688,13 +568,15 @@ genetic.fitness = function(entity) {
 // STOP SIMULATION
 genetic.generation = function(pop, generation, stats) {
     // stop running once we've reached the solution
-    this.processLinks(pop[0].entity);
-
-    if (this.scoreGrid() === this.gridSize * this.gridSize) {
-        return false;
-    } else {
-        return true;
-    }
+    this.resetAnyons();
+    this.loadAnyons("6003907404044709030003000700000004550000064037642865550000000582");
+    this.loadLinks(pop[0].entity);
+    this.processLinks();
+    // if (this.scoreGrid() === this.gridSize * this.gridSize) {
+    //     return false;
+    // } else {
+    //     return true;
+    // }
 };
 
 
@@ -713,18 +595,22 @@ genetic.notification = function(pop, generation, stats, isFinished) {
 
     // Reset world
     this.resetGrid();
-    this.loadAnyons(1);
+    this.loadAnyons("6003907404044709030003000700000004550000064037642865550000000582");
+    this.loadLinks(value);
 
     // Process links
-    this.processLinks(value);
+    this.processLinks();
+    this.displayGrid();
+    this.resetAnyons();
 
     // Prepend row
+    $("#secs").html(this.countLinks(value));
     var buf = "";
     buf += "<tr>";
     buf += "<td>" + generation + "</td>";
     buf += "<td>" + pop[0].fitness.toPrecision(5) + "</td>";
     buf += "<td class='solution'>" + value + "</td>";
-    buf += "<td>" + "</td>";
+    buf += "<td>" + this.countLinks(value) + "</td>";
     buf += "<td>" + "</td>";
     buf += "<td>" + "</td>";
     buf += "</tr>";
@@ -741,9 +627,10 @@ $(document).ready(function() {
     var x, y, puzzleNum, i, cell1, cell2, cell3, cell4, cell, $cell, total, randomPuzzle;
     genetic.resetAnyons();
     genetic.initGrid();
+    genetic.resetGrid();
     genetic.loadAnyons(puzzles[0]);
-    //genetic.loadLinks(genetic.seed());
-    genetic.loadLinks("0100100010000100010000001000100000100000000000000000000010100000001010100000000010101000000010100000000001110000");
+    genetic.loadLinks(genetic.seed());
+    //genetic.loadLinks("1001111101010110001110110111011100111011010101111100110010111111001110110110101110110001010101111100101101110111");
     genetic.processLinks();
     genetic.displayGrid();
 
@@ -787,19 +674,17 @@ $(document).ready(function() {
     // Controls
     $("#load").click(function() {
         puzzleNum = $("#puzzles").val();
-        genetic.resetAnyons();
-        genetic.resetGrid();
         genetic.loadAnyons(puzzles[puzzleNum]);
         genetic.displayGrid();
     });
     $("#solve").click(function() {
-        $("#results tbody").html("");
+        //$("#results tbody").html("");
         var config = {
-            "iterations": 3000,
+            "iterations": 2000,
             "size": 250,
             "crossover": 0.3,
             "mutation": 0.3,
-            "fittestAlwaysSurvives": false,
+            "fittestAlwaysSurvives": true,
             "skip": 20
         };
         var userData = {
