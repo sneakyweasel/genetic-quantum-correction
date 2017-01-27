@@ -163,19 +163,21 @@ var puzzles = [
 var genetic = Genetic.create();
 
 genetic.optimize = Genetic.Optimize.Maximize;
-genetic.select1 = Genetic.Select1.Tournament2;
-genetic.select2 = Genetic.Select2.Tournament2;
+genetic.select1 = Genetic.Select1.Tournament3;
+genetic.select2 = Genetic.Select2.Tournament3;
 
 genetic.gridSize = 8;
 genetic.d = 10;
 genetic.anyons = [];
 genetic.clusters = [];
+genetic.clusterList = [];
 
 
 // INIT ANYONS
 genetic.resetAnyons = function() {
     "use strict";
     var x, y;
+    this.clusterList = [];
     for (x = 0; x < this.gridSize * 2 - 1; x += 1) {
         this.anyons[x] = [];
         this.clusters[x] = [];
@@ -306,7 +308,7 @@ genetic.listClustersIds = function() {
     clusterIds = [];
     for (x = 0; x < this.gridSize; x += 1) {
         for (y = 0; y < this.gridSize; y += 1) {
-            if (this.clusters[x][y] !== undefined) {
+            if (this.clusters[x*2][y*2] !== 0) {
                 clusterIds.push(this.clusters[x][y]);
             }
         }
@@ -469,7 +471,7 @@ genetic.processLinks = function() {
             this.anyons[cell[0]][cell[1]] = sum;
         }
     }
-    return clusterList;
+    this.clusterList = clusterList;
 };
 
 
@@ -547,36 +549,39 @@ genetic.crossover = function(mother, father) {
 
 // FITNESS
 genetic.fitness = function(entity) {
-    var links, fitness;
+    var links, fitness, length, sum;
     fitness = 0;
     this.resetAnyons();
-    this.loadAnyons("6003907404044709030003000700000004550000064037642865550000000582");
+    this.loadAnyons(this.userData["puzzle"]);
     this.loadLinks(entity);
     this.processLinks();
-    // Positive rating
+
     // Add numbers of cleared cells
     fitness += this.scoreGrid();
-    // Add numbers of unique ids
-    fitness += this.listClustersIds().length;
+
+    // Process cluster list
+    for (var i = 0; i < this.clusterList.length; i++) {
+        length = this.clusterList[i].length;
+        sum = genetic.clusterRemain(this.clusterList[i]);
+        if (length === 1) {
+            fitness -= 7;
+        } else if (length > 1 && length < 4 && sum === 0) {
+            fitness += 10;
+        } else if (length >=4 && length < 7 && sum === 0) {
+            fitness += 5;
+        } else if (sum !== 0) {
+            fitness -= 5;
+        } else if (length >= 6 && sum === 0) {
+            fitness -= 10;
+        } else {
+            fitness -= length;
+        }
+    }
+
     // Negative rating
-    fitness -= this.countLinks(entity);
-    // Remove number of links
+    fitness -= this.countLinks(entity) * 4;
+
     return fitness;
-};
-
-
-// STOP SIMULATION
-genetic.generation = function(pop, generation, stats) {
-    // stop running once we've reached the solution
-    this.resetAnyons();
-    this.loadAnyons("6003907404044709030003000700000004550000064037642865550000000582");
-    this.loadLinks(pop[0].entity);
-    this.processLinks();
-    // if (this.scoreGrid() === this.gridSize * this.gridSize) {
-    //     return false;
-    // } else {
-    //     return true;
-    // }
 };
 
 
@@ -595,7 +600,7 @@ genetic.notification = function(pop, generation, stats, isFinished) {
 
     // Reset world
     this.resetGrid();
-    this.loadAnyons("6003907404044709030003000700000004550000064037642865550000000582");
+    this.loadAnyons(this.userData["puzzle"]);
     this.loadLinks(value);
 
     // Process links
@@ -604,14 +609,15 @@ genetic.notification = function(pop, generation, stats, isFinished) {
     this.resetAnyons();
 
     // Prepend row
+    $("#puzzleNum").html($("#puzzles").val());
     $("#secs").html(this.countLinks(value));
     var buf = "";
     buf += "<tr>";
     buf += "<td>" + generation + "</td>";
     buf += "<td>" + pop[0].fitness.toPrecision(5) + "</td>";
-    buf += "<td class='solution'>" + value + "</td>";
     buf += "<td>" + this.countLinks(value) + "</td>";
-    buf += "<td>" + "</td>";
+    buf += "<td>" + this.clusterList.length; "</td>";
+    buf += "<td class='solution'>" + value + "</td>";
     buf += "<td>" + "</td>";
     buf += "</tr>";
     $("#results tbody").prepend(buf);
@@ -628,11 +634,11 @@ $(document).ready(function() {
     genetic.resetAnyons();
     genetic.initGrid();
     genetic.resetGrid();
-    genetic.loadAnyons(puzzles[0]);
+    genetic.loadAnyons(puzzles[20]);
     genetic.loadLinks(genetic.seed());
-    //genetic.loadLinks("1001111101010110001110110111011100111011010101111100110010111111001110110110101110110001010101111100101101110111");
     genetic.processLinks();
     genetic.displayGrid();
+    genetic.resetAnyons();
 
     // Populate puzzle select
     for (i = 0; i < puzzles.length; i += 1) {
@@ -678,18 +684,21 @@ $(document).ready(function() {
         genetic.displayGrid();
     });
     $("#solve").click(function() {
-        //$("#results tbody").html("");
+        $("#results tbody").html("");
+        var puzzleNum = $("#puzzles").val();
         var config = {
             "iterations": 2000,
-            "size": 250,
-            "crossover": 0.3,
-            "mutation": 0.3,
+            "size": 500,
+            "crossover": 0.9,
+            "mutation": 0.2,
             "fittestAlwaysSurvives": true,
-            "skip": 20
+            "skip": 50
         };
         var userData = {
-            "gridSize": 8
+            "gridSize": 8,
+            "puzzle": puzzles[puzzleNum]
         };
+        console.log(puzzleNum);
         genetic.evolve(config, userData);
     });
     $("#save").click(function() {
