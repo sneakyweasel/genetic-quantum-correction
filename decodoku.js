@@ -12,6 +12,11 @@
 // - Calculate fitness
 // - Display result
 
+// GENETIC ALGORITHM
+// TODO: Implement locking of certain link
+// TODO: Implement sorting of result table
+// TODO: Implement toggle link
+
 // Game mechanics
 // TODO: Implement ability to find clusters on differents grids that anyons
 // TODO: Implement cluster solving cost
@@ -164,7 +169,7 @@ var genetic = Genetic.create();
 
 genetic.optimize = Genetic.Optimize.Maximize;
 genetic.select1 = Genetic.Select1.Tournament3;
-genetic.select2 = Genetic.Select2.Tournament3;
+genetic.select2 = Genetic.Select2.Random;
 
 genetic.gridSize = 8;
 genetic.d = 10;
@@ -287,17 +292,23 @@ genetic.resetGrid = function() {
 // DISPLAY GRID
 genetic.displayGrid = function() {
     "use strict";
-    var x, y, cell;
+    var x, y, cell, score;
+    genetic.resetGrid();
     for (x = 0; x < this.gridSize * 2 - 1; x += 1) {
         for (y = 0; y < this.gridSize * 2 - 1; y += 1) {
             if (this.anyons[x][y] !== 0) {
                 cell = $("#grid tbody")[0].rows[x].cells[y];
                 $(cell).html(this.anyons[x][y]);
                 $(cell).removeClass();
-                $(cell).addClass("group" + this.clusters[x][y]);
+                if (this.anyons[x][y] !== "0" && this.cellType([x, y]) === "syndrome") {
+                    $(cell).addClass("group" + this.clusters[x][y]);
+                } else if (this.anyons[x][y] === "+" && this.cellType([x, y]) === "link") {
+                    score += 1;
+                }
             }
         }
     }
+    $("#secs").html(score);
 };
 
 
@@ -449,7 +460,7 @@ genetic.adjacentCluster = function(coord) {
 
 
 // FIND ALL CLUSTERS
-genetic.processLinks = function() {
+genetic.processGrid = function() {
     "use strict";
     var queue, cluster, clusterList, cell, i, j, sum;
     clusterList = [];
@@ -485,6 +496,50 @@ genetic.lightCells = function(cells, clusterId) {
         cell = $("#grid tbody")[0].rows[x].cells[y];
         $(cell).addClass("group" + clusterId);
     }
+};
+
+
+// HIGHLIGHT CELLS
+genetic.cellType = function(coord) {
+    "use strict";
+    var x, y;
+    x = coord[0];
+    y = coord[1];
+    if (x % 2 === 0 && y % 2 === 0) {
+        return "syndrome";
+    } else if (x % 2 === 0 && y % 2 === 1 || x % 2 === 1 && y % 2 === 0) {
+        return "link";
+    } else {
+        return "mid";
+    }
+};
+
+
+// TOGGLE LINK
+genetic.toggleLink = function(coord) {
+    "use strict";
+    var type, x1, y1, x2, y2;
+    type = this.cellType(coord);
+    // find cells coords from link coords
+    if (type === "link" && coord[0] % 2 === 0) {
+        x1 = coord[0] - 1;
+        y1 = coord[1];
+        x2 = coord[0] + 1;
+        y2 = coord[1];
+    } else if (type === "link" && coord[0] % 2 === 1) {
+        x1 = coord[0];
+        y1 = coord[1] - 1;
+        x2 = coord[0];
+        y2 = coord[1] + 1;
+    }
+    // check link status
+    if (this.anyons[coord[0]][coord[1]] === "+" ) {
+        this.anyons[coord[0]][coord[1]] = " ";
+    } else {
+        this.anyons[coord[0]][coord[1]] = "+";
+    }
+    this.processGrid();
+    this.displayGrid();
 };
 
 
@@ -554,7 +609,7 @@ genetic.fitness = function(entity) {
     this.resetAnyons();
     this.loadAnyons(this.userData["puzzle"]);
     this.loadLinks(entity);
-    this.processLinks();
+    this.processGrid();
 
     // Add numbers of cleared cells
     fitness += this.scoreGrid();
@@ -572,7 +627,7 @@ genetic.fitness = function(entity) {
         } else if (sum !== 0) {
             fitness -= 5;
         } else if (length >= 6 && sum === 0) {
-            fitness -= 10;
+            fitness -= 7;
         } else {
             fitness -= length;
         }
@@ -599,14 +654,13 @@ genetic.notification = function(pop, generation, stats, isFinished) {
         return;
 
     // Reset world
-    this.resetGrid();
+    this.resetAnyons();
     this.loadAnyons(this.userData["puzzle"]);
     this.loadLinks(value);
 
     // Process links
-    this.processLinks();
+    this.processGrid();
     this.displayGrid();
-    this.resetAnyons();
 
     // Prepend row
     $("#puzzleNum").html($("#puzzles").val());
@@ -633,16 +687,14 @@ $(document).ready(function() {
     var x, y, puzzleNum, i, cell1, cell2, cell3, cell4, cell, $cell, total, randomPuzzle;
     genetic.resetAnyons();
     genetic.initGrid();
-    genetic.resetGrid();
-    genetic.loadAnyons(puzzles[20]);
     genetic.loadLinks(genetic.seed());
-    genetic.processLinks();
+    genetic.loadAnyons(puzzles[20]);
+    genetic.processGrid();
     genetic.displayGrid();
-    genetic.resetAnyons();
 
     // Populate puzzle select
     for (i = 0; i < puzzles.length; i += 1) {
-        $("#puzzles").append("<option value='" + i + "'>" + (i + 1) + "</option>");
+        $("#puzzles").append("<option value='" + i + "'>" + i + "</option>");
     }
 
     // Diamond grid hover
@@ -650,6 +702,7 @@ $(document).ready(function() {
         y = parseInt($(this).index(), 10);
         x = parseInt($(this).parent().index(), 10);
         $("#coord").html("[" + x + ", " + y + "]");
+        $("#cellType").html(genetic.cellType([x, y]));
     });
 
     // Diamond grid click
@@ -657,23 +710,13 @@ $(document).ready(function() {
         y = parseInt($(this).index(), 10);
         x = parseInt($(this).parent().index(), 10);
 
-        // vertical  or horizontal link
-        if (cellType([x, y]) === "link") {
+        // Find cell type
+        if (genetic.cellType([x, y]) === "link") {
             genetic.toggleLink([x, y]);
-
-            // mid cell cluster
-        } else if (cellType([x, y]) === "mid") {
-            cell1 = [x + 1, y + 1];
-            cell2 = [x + 1, y - 1];
-            cell3 = [x - 1, y + 1];
-            cell4 = [x - 1, y - 1];
-            total = anyons[secs][cell1[0] / 2][cell1[1] / 2] +
-                anyons[secs][cell2[0] / 2][cell2[1] / 2] +
-                anyons[secs][cell3[0] / 2][cell3[1] / 2] +
-                anyons[secs][cell4[0] / 2][cell4[1] / 2];
-            cell = $("#grid tbody")[0].rows[x].cells[y];
-            $cell = $(cell);
-            $cell.html(total % d);
+        } else if (genetic.cellType([x, y]) === "mid") {
+            console.log("mid");
+        } else {
+            console.log("syndrome");
         }
     });
 
@@ -687,7 +730,7 @@ $(document).ready(function() {
         $("#results tbody").html("");
         var puzzleNum = $("#puzzles").val();
         var config = {
-            "iterations": 2000,
+            "iterations": 1000,
             "size": 500,
             "crossover": 0.9,
             "mutation": 0.2,
@@ -703,5 +746,12 @@ $(document).ready(function() {
     });
     $("#save").click(function() {
         genetic.saveAnyons();
+    });
+
+    // Results
+    $("#results").hover(function(){
+        y = parseInt($(this).index(), 10);
+        x = parseInt($(this).parent().index(), 10);
+
     });
 });
