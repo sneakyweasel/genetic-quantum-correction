@@ -15,7 +15,7 @@
 // GENETIC ALGORITHM
 // TODO: Implement locking of certain link
 // TODO: Implement sorting of result table
-// TODO: Implement toggle link
+// TODO: Fix toggle link
 
 // Game mechanics
 // TODO: Implement ability to find clusters on differents grids that anyons
@@ -292,23 +292,44 @@ genetic.resetGrid = function() {
 // DISPLAY GRID
 genetic.displayGrid = function() {
     "use strict";
-    var x, y, cell, score;
+    var x, y, cell, $cell, type, score, i, j, sum;
+    score = 0;
     genetic.resetGrid();
     for (x = 0; x < this.gridSize * 2 - 1; x += 1) {
         for (y = 0; y < this.gridSize * 2 - 1; y += 1) {
+            type = this.cellType([x, y]);
             if (this.anyons[x][y] !== 0) {
                 cell = $("#grid tbody")[0].rows[x].cells[y];
-                $(cell).html(this.anyons[x][y]);
-                $(cell).removeClass();
-                if (this.anyons[x][y] !== "0" && this.cellType([x, y]) === "syndrome") {
-                    $(cell).addClass("group" + this.clusters[x][y]);
-                } else if (this.anyons[x][y] === "+" && this.cellType([x, y]) === "link") {
+                $cell =  $(cell);
+                $cell.html(this.anyons[x][y]);
+                $cell.removeClass();
+                if (type === "syndrome") {
+                    $cell.addClass("group" + this.clusters[x][y]);
+                } else if (type === "link" && this.anyons[x][y] === "+") {
                     score += 1;
                 }
             }
         }
     }
+    for (i = 0; i < this.clusterList.length; i += 1) {
+        sum = this.clusterRemain(this.clusterList[i]);
+        for (j = 0; j < this.clusterList[i].length; j += 1) {
+            x = this.clusterList[i][j][0];
+            y = this.clusterList[i][j][1];
+            cell = $("#grid tbody")[0].rows[x].cells[y];
+            $cell =  $(cell);
+            if (sum === 0) {
+                $cell.removeClass();
+                $cell.addClass("solved group" + this.clusters[x][y]);
+            } else {
+                $cell.html(sum);
+                $cell.removeClass();
+                $cell.addClass("group" + this.clusters[x][y]);
+            }
+        }
+    }
     $("#secs").html(score);
+    $("#clusters").html(this.clusterList.length);
 };
 
 
@@ -475,11 +496,9 @@ genetic.processGrid = function() {
     for (i = 0; i < clusterList.length; i += 1) {
         cluster = clusterList[i];
         sum = genetic.clusterRemain(cluster);
-        //this.lightCells(cluster, i);
         for (j = 0; j < cluster.length; j += 1) {
             cell = cluster[j];
             this.clusters[cell[0]][cell[1]] = i;
-            this.anyons[cell[0]][cell[1]] = sum;
         }
     }
     this.clusterList = clusterList;
@@ -604,33 +623,37 @@ genetic.crossover = function(mother, father) {
 
 // FITNESS
 genetic.fitness = function(entity) {
-    var links, fitness, length, sum;
+    var links, fitness, length, sum, complete;
     fitness = 0;
     this.resetAnyons();
     this.loadAnyons(this.userData["puzzle"]);
     this.loadLinks(entity);
     this.processGrid();
 
-    // Add numbers of cleared cells
-    fitness += this.scoreGrid();
-
     // Process cluster list
+    complete = true;
     for (var i = 0; i < this.clusterList.length; i++) {
         length = this.clusterList[i].length;
-        sum = genetic.clusterRemain(this.clusterList[i]);
+        sum = this.clusterRemain(this.clusterList[i]);
+        // punish singleton
         if (length === 1) {
-            fitness -= 7;
-        } else if (length > 1 && length < 4 && sum === 0) {
-            fitness += 10;
-        } else if (length >=4 && length < 7 && sum === 0) {
-            fitness += 5;
-        } else if (sum !== 0) {
-            fitness -= 5;
-        } else if (length >= 6 && sum === 0) {
-            fitness -= 7;
-        } else {
-            fitness -= length;
+            fitness -= 10;
+        // punish wrong pairs
+        } else if (length === 2 && sum !== 0) {
+            fitness -= 10;
         }
+        // punish wrong sum
+        if (sum !== 0) {
+            fitness -= length;
+            complete = false;
+        // reward good sum
+        } else {
+            fitness += 3;
+        }
+    }
+
+    if (complete === true) {
+        fitness += 64;
     }
 
     // Negative rating
@@ -664,7 +687,6 @@ genetic.notification = function(pop, generation, stats, isFinished) {
 
     // Prepend row
     $("#puzzleNum").html($("#puzzles").val());
-    $("#secs").html(this.countLinks(value));
     var buf = "";
     buf += "<tr>";
     buf += "<td>" + generation + "</td>";
@@ -730,10 +752,10 @@ $(document).ready(function() {
         $("#results tbody").html("");
         var puzzleNum = $("#puzzles").val();
         var config = {
-            "iterations": 1000,
-            "size": 500,
-            "crossover": 0.9,
-            "mutation": 0.2,
+            "iterations": 2000,
+            "size": 1500,
+            "crossover": 0.8,
+            "mutation": 0.3,
             "fittestAlwaysSurvives": true,
             "skip": 50
         };
@@ -749,9 +771,16 @@ $(document).ready(function() {
     });
 
     // Results
-    $("#results").hover(function(){
-        y = parseInt($(this).index(), 10);
-        x = parseInt($(this).parent().index(), 10);
-
+    $(document).on("click", "#results tr", function(e) {
+        puzzleNum = $("#puzzles").val();
+        var col = parseInt($(this).index(), 10);
+        var row = parseInt($(this).parent().index(), 10);
+        var cell = $(this)[0].cells[4];
+        var solution = $(cell).html();
+        genetic.resetAnyons();
+        genetic.loadAnyons(puzzles[puzzleNum]);
+        genetic.loadLinks(solution);
+        genetic.processGrid();
+        genetic.displayGrid();
     });
 });

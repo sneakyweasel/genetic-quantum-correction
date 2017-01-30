@@ -33,6 +33,9 @@ td, th {
     background-color: black; }
   #grid .linked {
     transform: rotate(90deg); }
+  #grid .solved {
+    background-color: #4d4d4d;
+    color: gray; }
 
 /* RESULTS */
 #results {
