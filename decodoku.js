@@ -12,8 +12,13 @@
 // - Calculate fitness
 // - Display result
 
+// THUNDER
+// TODO: Build tension between corners that sparks when the path of least resistance is found
+// TODO: Use parity to check pairing susceptibility along with % 10
+
 // GENETIC ALGORITHM
 // TODO: Implement locking of certain link
+// TODO: Implement localised radius mutations and crossover
 
 // Game mechanics
 // TODO: Implement cluster solving cost
@@ -31,7 +36,7 @@
 // Ideas
 // Why not use d = 9 or ^2 since then we have % 3 and more efficient
 // Could the digital root be used since it acts close to the modulo
-
+// Check https://en.wikipedia.org/wiki/Depth-first_search
 
 // GLOBAL VARIABLES
 var gridSize = 8;
@@ -241,6 +246,20 @@ genetic.loadAnyons = function(anyonsString) {
     if (total % this.d !== 0) {
         alert("Inconsistent problem error");
     }
+};
+
+
+// LOAD ANYONS
+genetic.saveAnyons = function() {
+    "use strict";
+    var x, y, str;
+    str = "";
+    for (x = 0; x < this.gridSize * 2 - 1; x += 1) {
+        str += this.anyons[x].join("") + "\n";
+    }
+    str = str.replace(/0/g, " ");
+    console.log(str);
+    return str;
 };
 
 
@@ -626,6 +645,21 @@ genetic.crossover = function(mother, father) {
     return [son, daughter];
 };
 
+// genetic.crossover = function(mother, father) {
+//     // two-point crossover
+//     var len = mother.length;
+//     var ca = Math.floor(Math.random() * len);
+//     var cb = Math.floor(Math.random() * len);
+//     if (ca > cb) {
+//         var tmp = cb;
+//         cb = ca;
+//         ca = tmp;
+//     }
+//     var son = father.substr(0, ca) + mother.substr(ca, cb - ca) + father.substr(cb);
+//     var daughter = mother.substr(0, ca) + father.substr(ca, cb - ca) + mother.substr(cb);
+//     return [son, daughter];
+// };
+
 
 // FITNESS
 genetic.fitness = function(entity) {
@@ -762,13 +796,12 @@ $(document).ready(function() {
             "crossover": 0.9,
             "mutation": 0.2,
             "fittestAlwaysSurvives": true,
-            "skip": 50
+            "skip": 0
         };
         var userData = {
             "gridSize": 8,
             "puzzle": puzzles[puzzleNum]
         };
-        console.log(puzzleNum);
         genetic.evolve(config, userData);
     });
     $("#save").click(function() {
