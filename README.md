@@ -1,12 +1,13 @@
 # genetic-quantum-correction
 
-The university of Basel launched a citizen science project called Decodoku about quantum error correction and wrote:
+The university of Basel and the Quantum Science and Technology Center launched a citizen science project called Decodoku about quantum error correction and wrote:
 > "Now we have over 100 puzzles for you to try. Once you've finished, you'll know more about quantum error correction than we do! So come and tell us scientists how to do our job"
 The 100 puzzle grids submitted by http://decodoku.com/puzzles were left unsolved so I created a genetic algorithm to evolve the optimal solution using genetic.js genetic algorithm library.
-Telling those pesky PhD quantum scientists how to do their job was clearly a motivation since I studied Philosophy.
 
-The code can be tested on http://logicien.fr and runs in the browser.
-It is based on the https://github.com/subprotocol/genetic-js library and was linted with ESlint.
+- Telling those pesky PhD quantum scientists how to do their job was clearly a motivation since I studied Philosophy.
+- The code can be tested on http://logicien.fr and runs in the browser.
+- It is based on the https://github.com/subprotocol/genetic-js library and was linted with ESlint.
+- You can get more information on topological quantum computers and their inner workings with the blog of Dr James Wootton at http://decodoku.blogspot.fr/
 
 HOW IT WORKS
 ============
@@ -46,7 +47,7 @@ Competition & the reward of breeding
 ------------------------------------
 - The individuals are processed and then compete against each other by comparing their fitness score.
 - The fittest individual gets the chance to pass their winning genes to another generation.
-- A random mate is found to the winner and combinations of their genome is made by genetic crossover into childrens.
+- A random mate is found to the winner and combinations of their genome is made by genetic crossover into children.
 - Mutations occur to maximize diversity.
 
 Evolution
