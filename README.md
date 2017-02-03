@@ -3,8 +3,7 @@
 The university of Basel and the Quantum Science and Technology Center launched a citizen science project called Decodoku about quantum error correction and wrote:
 > "Now we have over 100 puzzles for you to try. Once you've finished, you'll know more about quantum error correction than we do! So come and tell us scientists how to do our job"
 
-- The 100 puzzle grids submitted by http://decodoku.com/puzzles were left unsolved so I created a genetic algorithm to evolve the optimal solution using genetic.js genetic algorithm library.
-- Telling those pesky PhD quantum scientists how to do their job was clearly a motivation since I studied Philosophy.
+- Telling those pesky PhD quantum scientists how to do their job was clearly a motivation.
 - The code can be tested on http://logicien.fr and runs in the browser.
 - It is based on the https://github.com/subprotocol/genetic-js library and was linted with ESlint.
 - You can get more information on topological quantum computers and their inner workings with the blog of Dr James Wootton at http://decodoku.blogspot.fr/
