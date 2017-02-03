@@ -15,6 +15,9 @@
 // THUNDER
 // TODO: Build tension between corners that sparks when the path of least resistance is found
 // TODO: Use parity to check pairing susceptibility along with % 10
+// TODO: Link the behaviour of top left and bottom right
+// TODO: Problem of vertical links and horizontal links being separated
+// TODO: Cluster corner calculations shouldn't happen in remain cluster
 
 // GENETIC ALGORITHM
 // TODO: Implement locking of certain link
@@ -38,14 +41,6 @@
 // Could the digital root be used since it acts close to the modulo
 // Check https://en.wikipedia.org/wiki/Depth-first_search
 
-// GLOBAL VARIABLES
-var gridSize = 8;
-var d = 10;
-var secs = 0;
-
-// INITIALIZE CLUSTERS & ANYONS ARRAY
-var anyons = [];
-var clusters = [];
 
 // PUZZLES
 var puzzles = [
@@ -175,6 +170,7 @@ genetic.select2 = Genetic.Select2.Random;
 
 genetic.gridSize = 8;
 genetic.d = 10;
+genetic.totalSum = 0;
 genetic.anyons = [];
 genetic.clusters = [];
 genetic.clusterList = [];
@@ -246,6 +242,7 @@ genetic.loadAnyons = function(anyonsString) {
     if (total % this.d !== 0) {
         alert("Inconsistent problem error");
     }
+    this.findTotalSum();
 };
 
 
@@ -340,6 +337,7 @@ genetic.displayGrid = function() {
             }
         }
     }
+    $("#totalSum").html(this.totalSum);
     $("#secs").html(score);
     $("#clusters").html(this.clusterList.length);
 };
@@ -442,20 +440,7 @@ genetic.clusterRemain = function(cluster) {
     var i, total, top, bottom, question;
     total = 0;
     for (i = 0; i < cluster.length; i += 1) {
-        if (cluster[i][0] === 0 && cluster[i][1] === 0) {
-            top = true;
-        } else if (cluster[i][0] === 14 && cluster[i][1] === 14) {
-            bottom = true;
-        } else {
-            total += this.anyons[cluster[i][0]][cluster[i][1]];
-        }
-    }
-    if (top === true) {
-        this.anyons[0][0] = (10 - total % this.d) % this.d;
-        return 0;
-    } else if (bottom === true) {
-        this.anyons[14][14] = (10 - total % this.d) % this.d;
-        return 0;
+        total += this.anyons[cluster[i][0]][cluster[i][1]];
     }
     return total % this.d;
 };
@@ -505,11 +490,47 @@ genetic.adjacentCluster = function(coord) {
 };
 
 
-// FIND ALL CLUSTERS
+// FIND OPPOSITE CORNER CELL VALUE
+genetic.oppositeCornerValue = function(coord) {
+    "use strict";
+    var value, x, y;
+    x = coord[0];
+    y = coord[1];
+    value = this.d - (this.totalSum % this.d) - this.anyons[x][y];
+    if (value < 0) {
+        value += this.d;
+    }
+    return value % this.d;
+};
+
+
+// FIND FINAL
+genetic.findTotalSum = function() {
+    "use strict";
+    var x, y;
+    this.totalSum = 0;
+    for (x = 0; x < this.gridSize; x += 1) {
+        for (y = 0; y < this.gridSize; y += 1) {
+            if (!(x === 0 && y === 0 || x === 7 && y === 7)) {
+                this.totalSum += this.anyons[x*2][y*2];
+            }
+        }
+    }
+    this.totalSum = this.totalSum % this.d;
+};
+
+
+// PROCESS GRID
 genetic.processGrid = function() {
     "use strict";
     var queue, cluster, clusterList, cell, i, j, sum;
     clusterList = [];
+    // find the value of top left and bottom right corner
+    cluster = this.adjacentCluster([0, 0]);
+    sum = this.clusterRemain(cluster) + this.anyons[0][0];
+    this.anyons[0][0] = (this.d + sum) % this.d;
+    this.anyons[14][14] = this.oppositeCornerValue([0,0]);
+    // process queue
     queue = this.listCells();
     while (queue.length !== 0) {
         cell = queue.pop();
@@ -520,7 +541,7 @@ genetic.processGrid = function() {
     // assign cluster id to clusters
     for (i = 0; i < clusterList.length; i += 1) {
         cluster = clusterList[i];
-        sum = genetic.clusterRemain(cluster);
+        sum = this.clusterRemain(cluster);
         for (j = 0; j < cluster.length; j += 1) {
             cell = cluster[j];
             this.clusters[cell[0]][cell[1]] = i;
@@ -603,6 +624,34 @@ genetic.scoreGrid = function() {
 };
 
 
+// GET CELLS FROM RADIUS AND POINT
+genetic.radiusCells = function(coord, radius) {
+    "use strict";
+    var x, y, cells, i, filteredCells;
+    cells = [];
+    filteredCells = [];
+    for (x = -radius; x <= radius; x += 1) {
+        for (y = -radius; y <= radius; y += 1) {
+            if (x*x + y*y <= radius * radius) {
+                cells.push([coord[0] + x, coord[1] + y]);
+            }
+        }
+    }
+    // filter off link cells inside grid
+    for (i = 0; i < cells.length; i += 1) {
+        x = cells[i][0];
+        y = cells[i][1];
+        if (x >= 0 && x <= 14
+          && y >= 0 && y <= 14
+          && (x % 2 === 0 && y % 2 === 1 || x % 2 === 1 && y % 2 === 0)
+        ) {
+            filteredCells.push(cells[i]);
+        }
+    }
+    return filteredCells;
+};
+
+
 // CREATE SEEDS
 genetic.seed = function() {
     function randomString(len) {
@@ -622,14 +671,32 @@ genetic.mutate = function(entity) {
     function replaceAt(str, index, character) {
         return str.substr(0, index) + character + str.substr(index + character.length);
     }
-    // chromosomal drift
     var charset = "01";
     var i = Math.floor(Math.random() * entity.length);
     return replaceAt(entity, i, charset.charAt(Math.floor(Math.random() * charset.length)));
 };
 
 
-// CROSSOVER
+// // RADIAL CROSSOVER
+// genetic.crossover = function(mother, father) {
+//     var x, y, radius, cells;
+//     // generate crossover circle values
+//     radius = Math.floor(Math.random() * 5) + 1;
+//     x = Math.floor(Math.random() * this.gridSize);
+//     y = Math.floor(Math.random() * this.gridSize);
+//     // generate cell list included in the circle
+//     cells = this.radiusCells([x, y], radius);
+//     console.log("CROSSOVER: ["+x+", "+y+"] " + radius);
+//     // generate link array from the circle
+//     // output binary string from the links
+//
+//     var son = father.substr(0, ca) + mother.substr(ca, cb - ca) + father.substr(cb);
+//     var daughter = mother.substr(0, ca) + father.substr(ca, cb - ca) + mother.substr(cb);
+//     return [son, daughter];
+// };
+
+
+// BASIC CROSSOVER
 genetic.crossover = function(mother, father) {
     // two-point crossover
     var len = mother.length;
@@ -644,21 +711,6 @@ genetic.crossover = function(mother, father) {
     var daughter = mother.substr(0, ca) + father.substr(ca, cb - ca) + mother.substr(cb);
     return [son, daughter];
 };
-
-// genetic.crossover = function(mother, father) {
-//     // two-point crossover
-//     var len = mother.length;
-//     var ca = Math.floor(Math.random() * len);
-//     var cb = Math.floor(Math.random() * len);
-//     if (ca > cb) {
-//         var tmp = cb;
-//         cb = ca;
-//         ca = tmp;
-//     }
-//     var son = father.substr(0, ca) + mother.substr(ca, cb - ca) + father.substr(cb);
-//     var daughter = mother.substr(0, ca) + father.substr(ca, cb - ca) + mother.substr(cb);
-//     return [son, daughter];
-// };
 
 
 // FITNESS
@@ -791,8 +843,8 @@ $(document).ready(function() {
         $("#results tbody").html("");
         var puzzleNum = $("#puzzles").val();
         var config = {
-            "iterations": 2000,
-            "size": 1500,
+            "iterations": 1000,
+            "size": 1000,
             "crossover": 0.9,
             "mutation": 0.2,
             "fittestAlwaysSurvives": true,
@@ -822,3 +874,28 @@ $(document).ready(function() {
         genetic.displayGrid();
     });
 });
+
+
+// genetic.mutate = function(entity) {
+//     function replaceAt(str, index, character) {
+//         return str.substr(0, index) + character + str.substr(index + character.length);
+//     }
+//     var charset = "01";
+//     var i = Math.floor(Math.random() * entity.length);
+//     return replaceAt(entity, i, charset.charAt(Math.floor(Math.random() * charset.length)));
+// };
+
+// genetic.crossover = function(mother, father) {
+//     // two-point crossover
+//     var len = mother.length;
+//     var ca = Math.floor(Math.random() * len);
+//     var cb = Math.floor(Math.random() * len);
+//     if (ca > cb) {
+//         var tmp = cb;
+//         cb = ca;
+//         ca = tmp;
+//     }
+//     var son = father.substr(0, ca) + mother.substr(ca, cb - ca) + father.substr(cb);
+//     var daughter = mother.substr(0, ca) + father.substr(ca, cb - ca) + mother.substr(cb);
+//     return [son, daughter];
+// };
