@@ -2,44 +2,6 @@
 //------------------------------------------------------------------------------
 // QUANTUM ERROR CORRECTION CODE
 //------------------------------------------------------------------------------
-// INPUT: A 8*8 grid of values or game over
-// OUTPUT: A list of 10 numbers describing grid movements
-
-// Genetic algorithm
-// - Reset state
-// - Load anyons puzzle
-// - Load link state
-// - Calculate fitness
-// - Display result
-
-// THUNDER
-// TODO: Build tension between corners that sparks when the path of least resistance is found
-// TODO: Use parity to check pairing susceptibility along with % 10
-// TODO: Link the behaviour of top left and bottom right
-// TODO: Problem of vertical links and horizontal links being separated
-// TODO: Cluster corner calculations shouldn't happen in remain cluster
-
-// GENETIC ALGORITHM
-// TODO: Implement locking of certain link
-// TODO: Implement localised radius mutations and crossover
-
-// Game mechanics
-// TODO: Implement cluster solving cost
-// TODO: Create a cluster and a cell class
-// AI
-// TODO: Tensor strength is distance to other compatible cluster
-// TODO: Implement divide and conquer strategy
-// TODO: Consider puzzle as a collapsing graph
-// TODO: Implement a js eval textarea field where you can test your AI
-// History
-// TODO: Create a highscore chart
-// TODO: Improve save function
-// TODO: Implement an auto replay feature
-// TODO: Implement secs for noise generation
-// Ideas
-// Why not use d = 9 or ^2 since then we have % 3 and more efficient
-// Could the digital root be used since it acts close to the modulo
-// Check https://en.wikipedia.org/wiki/Depth-first_search
 
 
 // PUZZLES
@@ -162,6 +124,7 @@ var puzzles = [
 
 
 //------------------------GENETIC-----------------------------------------------
+// Use of the genetic.js
 var genetic = Genetic.create();
 
 genetic.optimize = Genetic.Optimize.Maximize;
@@ -193,6 +156,12 @@ genetic.getCoordFromIndex = function(id) {
         col = col * 2;
     }
     return [row, col];
+};
+
+
+// REPLACE AT COORD
+genetic.replaceAt = function(str, index, character) {
+    return str.substr(0, index) + character + str.substr(index + character.length);
 };
 
 
@@ -337,6 +306,7 @@ genetic.displayGrid = function() {
             }
         }
     }
+    $("#puzzleNum").html(this.userData["puzzle"]);
     $("#totalSum").html(this.totalSum);
     $("#secs").html(score);
     $("#clusters").html(this.clusterList.length);
@@ -667,13 +637,16 @@ genetic.seed = function() {
 
 
 // MUTATIONS
+// dual mutations allows to unlink possible included clusters
+// 6 5-9
+// | |
+// 2-8
 genetic.mutate = function(entity) {
-    function replaceAt(str, index, character) {
-        return str.substr(0, index) + character + str.substr(index + character.length);
-    }
-    var charset = "01";
-    var i = Math.floor(Math.random() * entity.length);
-    return replaceAt(entity, i, charset.charAt(Math.floor(Math.random() * charset.length)));
+    var i, val, str;
+    i = Math.floor(Math.random() * entity.length);
+    val = Math.floor(Math.random() * 2).toString();
+    str = this.replaceAt(entity, i, val);
+    return str;
 };
 
 
@@ -844,7 +817,7 @@ $(document).ready(function() {
         var puzzleNum = $("#puzzles").val();
         var config = {
             "iterations": 1000,
-            "size": 1000,
+            "size": 1500,
             "crossover": 0.9,
             "mutation": 0.2,
             "fittestAlwaysSurvives": true,
@@ -874,28 +847,3 @@ $(document).ready(function() {
         genetic.displayGrid();
     });
 });
-
-
-// genetic.mutate = function(entity) {
-//     function replaceAt(str, index, character) {
-//         return str.substr(0, index) + character + str.substr(index + character.length);
-//     }
-//     var charset = "01";
-//     var i = Math.floor(Math.random() * entity.length);
-//     return replaceAt(entity, i, charset.charAt(Math.floor(Math.random() * charset.length)));
-// };
-
-// genetic.crossover = function(mother, father) {
-//     // two-point crossover
-//     var len = mother.length;
-//     var ca = Math.floor(Math.random() * len);
-//     var cb = Math.floor(Math.random() * len);
-//     if (ca > cb) {
-//         var tmp = cb;
-//         cb = ca;
-//         ca = tmp;
-//     }
-//     var son = father.substr(0, ca) + mother.substr(ca, cb - ca) + father.substr(cb);
-//     var daughter = mother.substr(0, ca) + father.substr(ca, cb - ca) + mother.substr(cb);
-//     return [son, daughter];
-// };
