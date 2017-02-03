@@ -58,9 +58,8 @@ WHAT'S NEXT
 ===========
 - Improving the genetic cross-over during mating by radius based genome swapping.
 - Figuring out the deterministic graph theory algorithm behind (in progress).
-- Finetuning the different fitness and G.A. variables to maximize.
+- Finetuning the different fitness and G.A. variables to maximize evolution speed.
 - Incorporating this into the dynamical Decodoku game (in progress).
-- Much resources are used to generate the graphical interface so feel free to tweak it.
 - Use a post-processing optimization to avoid "sticky" clusters, etc.
 - Have a guided evolution subsystem focusing on the stability of top right and bottom left corners.
 - Kind have an idea of less error prone quantum grid with magical math spices.
