@@ -6,7 +6,7 @@ The 100 puzzle grids submitted by http://decodoku.com/puzzles were left unsolved
 Telling those pesky PhD quantum scientists how to do their job was clearly a motivation since I studied Philosophy.
 
 The code can be tested on http://logicien.fr and runs in the browser.
-It is based on the https://github.com/subprotocol/genetic-js library.
+It is based on the https://github.com/subprotocol/genetic-js library and was linted with ESlint.
 
 HOW IT WORKS
 ============
@@ -60,4 +60,7 @@ WHAT'S NEXT
 - Figuring out the deterministic graph theory algorithm behind (in progress).
 - Finetuning the different fitness and G.A. variables to maximize.
 - Incorporating this into the dynamical Decodoku game (in progress).
-- Much ressources are used to generate the graphical interface so feel free to tweak it.
+- Much resources are used to generate the graphical interface so feel free to tweak it.
+- Use a post-processing optimization to avoid "sticky" clusters, etc.
+- Have a guided evolution subsystem focusing on the stability of top right and bottom left corners.
+- Kind have an idea of less error prone quantum grid with magical math spices.
