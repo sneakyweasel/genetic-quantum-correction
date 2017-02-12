@@ -142,20 +142,46 @@ genetic.clusterList = [];
 // FIND COORD FROM POSITION
 genetic.getCoordFromIndex = function(id) {
     "use strict";
-    var row, col, cell, $cell;
+    var x, y, cell, $cell;
     //vertical and horizontal (starting at index 0 [0,1] ending at index 55 [14, 13] )
     if (id < 56) {
-        row = Math.floor(id / 7);
-        col = id - row * 7;
-        row = row * 2;
-        col = col * 2 + 1;
+        x = Math.floor(id / 7);
+        y = id - x * 7;
+        x = x * 2;
+        y = y * 2 + 1;
     } else {
-        row = Math.floor((id - 56) / 8);
-        col = (id - 56) - row * 8;
-        row = row * 2 + 1;
-        col = col * 2;
+        x = Math.floor((id - 56) / 8);
+        y = (id - 56) - x * 8;
+        x = x * 2 + 1;
+        y = y * 2;
     }
-    return [row, col];
+    return [x, y];
+};
+
+
+// GET INDEX FROM LINK COORD
+// TODO: totally sucks
+genetic.getIndexfromCoord = function(coord) {
+    "use strict";
+    var i, coord1;
+    for (i = 0; i < 112; i += 1) {
+        coord1 = this.getCoordFromIndex(i);
+        if (JSON.stringify(coord) === JSON.stringify(coord1)) {
+            return i;
+        }
+    }
+    // "use strict";
+    // var x, y, index;
+    // x = coord[0]; // 14
+    // y = coord[1]; // 14
+    // // vertical link
+    // if (x % 2 === 1 && y % 2 === 0) {
+    //     index = 55 + y * 7 + x;
+    // // horizontal link
+    // } else if (x % 2 === 0 && y % 2 === 1) {
+    //     index = 0 + x * 8 + y;
+    // }
+    // return index;
 };
 
 
@@ -212,6 +238,8 @@ genetic.loadAnyons = function(anyonsString) {
         alert("Inconsistent problem error");
     }
     this.findTotalSum();
+    this.anyons[0][0] = 0;
+    this.anyons[14][14] = 0;
 };
 
 
@@ -637,10 +665,6 @@ genetic.seed = function() {
 
 
 // MUTATIONS
-// dual mutations allows to unlink possible included clusters
-// 6 5-9
-// | |
-// 2-8
 genetic.mutate = function(entity) {
     var i, val, str;
     i = Math.floor(Math.random() * entity.length);
@@ -650,40 +674,73 @@ genetic.mutate = function(entity) {
 };
 
 
-// // RADIAL CROSSOVER
+// RADIAL CROSSOVER
+genetic.crossover = function(mother, father) {
+    var x, y, radius, cells, son, daughter, indexes, i;
+    indexes = [];
+
+    // generate crossover circle values
+    radius = Math.floor(Math.random() * 6) + 1;
+    x = Math.floor(Math.random() * (this.gridSize - 1) * 2);
+    y = Math.floor(Math.random() * (this.gridSize - 1) * 2);
+
+    // generate cell list included in the circle
+    cells = this.radiusCells([x, y], radius);
+    // console.log("CROSSOVER: ["+x+", "+y+"] " + radius);
+
+    // convert cells coordinates to dna string indexes
+    for (i = 0; i < cells.length; i++) {
+        indexes.push(this.getIndexfromCoord(cells[i]));
+    }
+
+    // output children dna string from the indexes crossover
+    son = "";
+    daughter = "";
+    for (i = 0; i < 112; i++) {
+        if (indexes.includes(i)) {
+            son += mother[i];
+            daughter += father[i];
+        } else {
+            son += father[i];
+            daughter += mother[i];
+        }
+    }
+    // console.log(son);
+    // console.log(daughter);
+
+    // son = father.substr(0, ca) + mother.substr(ca, cb - ca) + father.substr(cb);
+    // daughter = mother.substr(0, ca) + father.substr(ca, cb - ca) + mother.substr(cb);
+    return [son, daughter];
+};
+
+genetic.testRadialCrossover = function() {
+    "use strict";
+    var mother, father, child;
+    mother = "1".repeat(112);
+    father = "0".repeat(112);
+    child = this.crossover(mother, father);
+    this.resetAnyons();
+    this.loadLinks(child[1]);
+    this.processGrid();
+    this.displayGrid();
+};
+
+
+// BASIC CROSSOVER
 // genetic.crossover = function(mother, father) {
-//     var x, y, radius, cells;
-//     // generate crossover circle values
-//     radius = Math.floor(Math.random() * 5) + 1;
-//     x = Math.floor(Math.random() * this.gridSize);
-//     y = Math.floor(Math.random() * this.gridSize);
-//     // generate cell list included in the circle
-//     cells = this.radiusCells([x, y], radius);
-//     console.log("CROSSOVER: ["+x+", "+y+"] " + radius);
-//     // generate link array from the circle
-//     // output binary string from the links
-//
+//     // two-point crossover
+//     var len = mother.length;
+//     var ca = Math.floor(Math.random() * len);
+//     var cb = Math.floor(Math.random() * len);
+//     if (ca > cb) {
+//         var tmp = cb;
+//         cb = ca;
+//         ca = tmp;
+//     }
 //     var son = father.substr(0, ca) + mother.substr(ca, cb - ca) + father.substr(cb);
 //     var daughter = mother.substr(0, ca) + father.substr(ca, cb - ca) + mother.substr(cb);
 //     return [son, daughter];
 // };
-
-
-// BASIC CROSSOVER
-genetic.crossover = function(mother, father) {
-    // two-point crossover
-    var len = mother.length;
-    var ca = Math.floor(Math.random() * len);
-    var cb = Math.floor(Math.random() * len);
-    if (ca > cb) {
-        var tmp = cb;
-        cb = ca;
-        ca = tmp;
-    }
-    var son = father.substr(0, ca) + mother.substr(ca, cb - ca) + father.substr(cb);
-    var daughter = mother.substr(0, ca) + father.substr(ca, cb - ca) + mother.substr(cb);
-    return [son, daughter];
-};
 
 
 // FITNESS
