@@ -1,12 +1,23 @@
 # genetic-quantum-correction
 
-The university of Basel and the Quantum Science and Technology Center launched a citizen science project called Decodoku about quantum error correction and wrote:
+- Great news! My solution to the Decodoku quantum error correction puzzles using a genetic algorithm was featured in "A proposal for a minimal surface code experiment" by Dr James R. Wootton at https://arxiv.org/abs/1608.05053
+
+- The university of Basel and the Quantum Science and Technology Center launched a citizen science project called Decodoku about quantum error correction at http://decodoku.com/puzzles and wrote:
 > "Now we have over 100 puzzles for you to try. Once you've finished, you'll know more about quantum error correction than we do! So come and tell us scientists how to do our job"
 
 - Telling those pesky PhD quantum scientists how to do their job was clearly a motivation.
-- The code can be tested on http://logicien.fr and runs in the browser.
+- The code can be tested on http://logicien.fr/decodoku/ in the browser.
 - It is based on the https://github.com/subprotocol/genetic-js library and was linted with ESlint.
 - You can get more information on topological quantum computers and their inner workings with the blog of Dr James Wootton at http://decodoku.blogspot.fr/
+
+HOW TO USE
+==========
+- Clone the repository
+- get a http-server such as https://www.npmjs.com/package/http-server
+- Move to the repository directory and launch server (http-server)
+- Using your browser go to http://localhost:8080
+- Toy with the puzzle variables and genetic strategies if you wish.
+- Select a puzzle, click the load button, click the solve button and enjoy the solving process.
 
 HOW IT WORKS
 ============
@@ -56,10 +67,6 @@ Evolution
 
 WHAT'S NEXT
 ===========
-- Improving the genetic cross-over during mating by radius based genome swapping.
-- Figuring out the deterministic graph theory algorithm behind (in progress).
 - Finetuning the different fitness and G.A. variables to maximize evolution speed.
-- Incorporating this into the dynamical Decodoku game (in progress).
 - Use a post-processing optimization to avoid "sticky" clusters, etc.
-- Have a guided evolution subsystem focusing on the stability of top right and bottom left corners.
-- Kind have an idea of less error prone quantum grid with magical math spices.
+- I have an idea for a less error prone logical qbit grid with magical math spices (using the n-queens theorem).

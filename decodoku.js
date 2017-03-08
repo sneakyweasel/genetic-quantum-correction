@@ -675,72 +675,66 @@ genetic.mutate = function(entity) {
 
 
 // RADIAL CROSSOVER
-genetic.crossover = function(mother, father) {
-    var x, y, radius, cells, son, daughter, indexes, i;
-    indexes = [];
-
-    // generate crossover circle values
-    radius = Math.floor(Math.random() * 6) + 1;
-    x = Math.floor(Math.random() * (this.gridSize - 1) * 2);
-    y = Math.floor(Math.random() * (this.gridSize - 1) * 2);
-
-    // generate cell list included in the circle
-    cells = this.radiusCells([x, y], radius);
-    // console.log("CROSSOVER: ["+x+", "+y+"] " + radius);
-
-    // convert cells coordinates to dna string indexes
-    for (i = 0; i < cells.length; i++) {
-        indexes.push(this.getIndexfromCoord(cells[i]));
-    }
-
-    // output children dna string from the indexes crossover
-    son = "";
-    daughter = "";
-    for (i = 0; i < 112; i++) {
-        if (indexes.includes(i)) {
-            son += mother[i];
-            daughter += father[i];
-        } else {
-            son += father[i];
-            daughter += mother[i];
-        }
-    }
-    // console.log(son);
-    // console.log(daughter);
-
-    // son = father.substr(0, ca) + mother.substr(ca, cb - ca) + father.substr(cb);
-    // daughter = mother.substr(0, ca) + father.substr(ca, cb - ca) + mother.substr(cb);
-    return [son, daughter];
-};
-
-genetic.testRadialCrossover = function() {
-    "use strict";
-    var mother, father, child;
-    mother = "1".repeat(112);
-    father = "0".repeat(112);
-    child = this.crossover(mother, father);
-    this.resetAnyons();
-    this.loadLinks(child[1]);
-    this.processGrid();
-    this.displayGrid();
-};
+// genetic.crossover = function(mother, father) {
+//     var x, y, radius, cells, son, daughter, indexes, i;
+//     indexes = [];
+//
+//     // generate crossover circle values
+//     radius = Math.floor(Math.random() * 6) + 1;
+//     x = Math.floor(Math.random() * (this.gridSize - 1) * 2);
+//     y = Math.floor(Math.random() * (this.gridSize - 1) * 2);
+//
+//     // generate cell list included in the circle
+//     cells = this.radiusCells([x, y], radius);
+//
+//     // convert cells coordinates to dna string indexes
+//     for (i = 0; i < cells.length; i++) {
+//         indexes.push(this.getIndexfromCoord(cells[i]));
+//     }
+//
+//     // output children dna string from the indexes crossover
+//     son = "";
+//     daughter = "";
+//     for (i = 0; i < 112; i++) {
+//         if (indexes.includes(i)) {
+//             son += mother[i];
+//             daughter += father[i];
+//         } else {
+//             son += father[i];
+//             daughter += mother[i];
+//         }
+//     }
+//     return [son, daughter];
+// };
+//
+// genetic.testRadialCrossover = function() {
+//     "use strict";
+//     var mother, father, child;
+//     mother = "1".repeat(112);
+//     father = "0".repeat(112);
+//     child = this.crossover(mother, father);
+//     this.resetAnyons();
+//     this.loadLinks(child[1]);
+//     this.processGrid();
+//     this.displayGrid();
+// };
 
 
 // BASIC CROSSOVER
-// genetic.crossover = function(mother, father) {
-//     // two-point crossover
-//     var len = mother.length;
-//     var ca = Math.floor(Math.random() * len);
-//     var cb = Math.floor(Math.random() * len);
-//     if (ca > cb) {
-//         var tmp = cb;
-//         cb = ca;
-//         ca = tmp;
-//     }
-//     var son = father.substr(0, ca) + mother.substr(ca, cb - ca) + father.substr(cb);
-//     var daughter = mother.substr(0, ca) + father.substr(ca, cb - ca) + mother.substr(cb);
-//     return [son, daughter];
-// };
+genetic.crossover = function(mother, father) {
+    // two-point crossover
+    var len = mother.length;
+    var ca = Math.floor(Math.random() * len);
+    var cb = Math.floor(Math.random() * len);
+    if (ca > cb) {
+        var tmp = cb;
+        cb = ca;
+        ca = tmp;
+    }
+    var son = father.substr(0, ca) + mother.substr(ca, cb - ca) + father.substr(cb);
+    var daughter = mother.substr(0, ca) + father.substr(ca, cb - ca) + mother.substr(cb);
+    return [son, daughter];
+};
 
 
 // FITNESS
@@ -756,28 +750,33 @@ genetic.fitness = function(entity) {
     for (var i = 0; i < this.clusterList.length; i++) {
         length = this.clusterList[i].length;
         sum = this.clusterRemain(this.clusterList[i]);
+
         // punish singleton
         if (length === 1) {
             fitness -= 10;
+
         // punish wrong pairs
         } else if (length === 2 && sum !== 0) {
             fitness -= 10;
         }
+
         // punish wrong sum
         if (sum !== 0) {
             fitness -= length;
             complete = false;
+
         // reward good sum
         } else {
             fitness += 3;
         }
     }
 
+    // reward equilibrium
     if (complete === true) {
         fitness += 64;
     }
 
-    // Negative rating
+    // Negative cost for links
     fitness -= this.countLinks(entity) * 4;
 
     return fitness;
